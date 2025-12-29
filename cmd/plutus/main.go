@@ -14,7 +14,6 @@ func main() {
 		return 
 	}
 
-
 	flag.Bool("help", false, "help flag")
 
 	flag.Parse()
