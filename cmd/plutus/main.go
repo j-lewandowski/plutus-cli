@@ -2,6 +2,8 @@ package main
 
 import (
 	"flag"
+	"fmt"
+	"plutus-cli/internal/cli/actions"
 	"plutus-cli/internal/cli/ui"
 	"plutus-cli/internal/db"
 )
@@ -10,14 +12,22 @@ func main() {
 	_, err := db.InitDb()
 
 	if err != nil {
-		println("Can't initialize database:", err)
+		fmt.Println("Can't initialize database:", err)
 		return 
 	}
-
-	flag.Bool("help", false, "help flag")
+	helpFlag := flag.Bool("help", false, "help flag")
 
 	flag.Parse()
 
-	ui.PrintBanner()
-	ui.PrintHelp()
+	if *helpFlag {
+		ui.DisplayHelpScreen()
+		return
+	}
+
+	err = actions.HandleUserAction()
+
+	if err != nil {
+		fmt.Println("Couln't perform this operation because of an error:", err)
+		return 
+	}
 }
