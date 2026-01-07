@@ -9,12 +9,14 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-func InitDb() (*sql.DB, error) {
+var connection *sql.DB
+
+func InitDb() error {
 
 	home, err := os.UserHomeDir()
 
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	dbPath := filepath.Join(home, ".plutus.sqlite")
@@ -22,11 +24,11 @@ func InitDb() (*sql.DB, error) {
 	db, err := sql.Open("sqlite", dbPath)
 
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	if err := db.Ping(); err != nil {
-		return nil, err
+		return err
 	}
 
 	_, err = db.Exec(`
@@ -38,7 +40,7 @@ func InitDb() (*sql.DB, error) {
 	);`)
 
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	_, err = db.Exec(`
@@ -49,7 +51,7 @@ func InitDb() (*sql.DB, error) {
 	);`)
 
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	_, err = db.Exec(`
@@ -61,8 +63,17 @@ func InitDb() (*sql.DB, error) {
 
 	if err != nil {
 		fmt.Println("Here")
-		return nil, err
+		return err
 	}
 
-	return db, nil
+	connection = db
+	return nil
+}
+
+func GetDb() *sql.DB {
+	return connection
+}
+
+func Close() {
+	connection.Close()
 }

@@ -1,7 +1,6 @@
 package db
 
 import (
-	"fmt"
 	"math"
 	"strconv"
 	"strings"
@@ -64,7 +63,6 @@ func (d *UserDeposit) initDate(depositDateInput string) error {
 	for _, format := range possibleFormats {
 
 		parsedTime, err := time.Parse(format, depositDateInput)
-		fmt.Println(parsedTime)
 		if err != nil {
 			continue
 		}
