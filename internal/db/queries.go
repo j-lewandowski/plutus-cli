@@ -1,13 +1,12 @@
-package queries
+package db
 
 import (
 	"database/sql"
 	"os"
 	"path/filepath"
-	"plutus-cli/internal/db/models"
 )
 
-func AddDeposit(deposit models.UserDeposit) error {
+func AddDeposit(deposit UserDeposit) error {
 	home, err := os.UserHomeDir()
 
 	if err != nil {

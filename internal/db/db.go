@@ -36,7 +36,7 @@ func InitDb() (*sql.DB, error) {
 		deposit_amount_in_eurocents	INTEGER						NOT NULL,
 		deposit_volume							DECIMAL(7, 12)		NOT NULL
 	);`)
-	
+
 	if err != nil {
 		return nil, err
 	}

@@ -3,15 +3,13 @@ package actions
 import (
 	"errors"
 	"fmt"
-	actions "plutus-cli/internal/cli/actions/internal"
 	"plutus-cli/internal/cli/ui"
-	"plutus-cli/internal/db/models"
-	"plutus-cli/internal/db/queries"
+	"plutus-cli/internal/db"
 )
 
 func HandleUserAction() error {
 
-	userInput, err := actions.ParseUserInput()
+	userInput, err := ParseUserInput()
 
 	if err != nil {
 		return err
@@ -39,7 +37,7 @@ func handleAddDeposit(addDepositParams []string) error {
 		return errors.New("Not enough parameters passed")
 	}
 
-	parsedDepositParams := models.AddDepositParams{
+	parsedDepositParams := db.AddDepositParams{
 		DepositAmount: addDepositParams[0],
 	}
 
@@ -47,13 +45,13 @@ func handleAddDeposit(addDepositParams []string) error {
 		parsedDepositParams.DepositDate = addDepositParams[1]
 	}
 
-	deposit := models.UserDeposit{}
+	deposit := db.UserDeposit{}
 
 	if err := deposit.From(parsedDepositParams); err != nil {
 		return err
 	}
 
-	if err := queries.AddDeposit(deposit); err != nil {
+	if err := db.AddDeposit(deposit); err != nil {
 		return err
 	}
 
