@@ -8,10 +8,10 @@ import (
 )
 
 // @TODO - figure out better way to handle enums because go doesn't really have them :c
-var AvaliableCommands = []string{"add"} 
+var AvaliableCommands = []string{"add", "sync"}
 
 type UserInput struct {
-	ActionName string
+	ActionName   string
 	ActionParams []string
 }
 
@@ -23,7 +23,7 @@ func ParseUserInput() (UserInput, error) {
 			ActionName: "help",
 		}, nil
 	}
-	
+
 	params := args[2:]
 
 	command, err := ValidateCommand(args[1])
@@ -33,17 +33,17 @@ func ParseUserInput() (UserInput, error) {
 	}
 
 	return UserInput{
-		ActionName: command,
+		ActionName:   command,
 		ActionParams: params,
 	}, nil
 }
 
-func ValidateCommand(command string) (string, error){
+func ValidateCommand(command string) (string, error) {
 	lowercaseCommand := strings.ToLower(command)
 
 	if !slices.Contains(AvaliableCommands, lowercaseCommand) {
 		return "", errors.New("Command not implemented.")
 	}
-	
+
 	return lowercaseCommand, nil
 }

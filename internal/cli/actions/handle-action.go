@@ -22,6 +22,12 @@ func HandleUserAction() error {
 		}
 		return nil
 
+	case "sync":
+		if err := handleSync(); err != nil {
+			return err
+		}
+		return nil
+
 	case "help":
 		ui.DisplayHelpScreen()
 
@@ -56,6 +62,16 @@ func handleAddDeposit(addDepositParams []string) error {
 	}
 
 	fmt.Println("Deposit added!")
+
+	return nil
+}
+
+func handleSync() error {
+	downloaders := []Downloader{}
+
+	for _, downloader := range downloaders {
+		downloader.Download()
+	}
 
 	return nil
 }
