@@ -5,6 +5,7 @@ import (
 	"os"
 	"slices"
 	"strings"
+	"time"
 )
 
 // @TODO - figure out better way to handle enums because go doesn't really have them :c
@@ -18,7 +19,7 @@ type UserInput struct {
 func ParseUserInput() (UserInput, error) {
 	args := os.Args
 
-	if len(args) < 3 {
+	if len(args) < 2 {
 		return UserInput{
 			ActionName: "help",
 		}, nil
@@ -46,4 +47,19 @@ func ValidateCommand(command string) (string, error) {
 	}
 
 	return lowercaseCommand, nil
+}
+
+func DaysUntilToday(startDate time.Time) []time.Time {
+	var days []time.Time
+
+	now := time.Now()
+
+	cursor := startDate.AddDate(0, 0, 1)
+
+	for !cursor.After(now) {
+		days = append(days, cursor)
+		cursor = cursor.AddDate(0, 0, 1)
+	}
+
+	return days
 }

@@ -43,7 +43,7 @@ func handleAddDeposit(addDepositParams []string) error {
 		return errors.New("Not enough parameters passed")
 	}
 
-	parsedDepositParams := db.AddDepositParams{
+	parsedDepositParams := db.NewDepositParams{
 		DepositAmount: addDepositParams[0],
 	}
 
@@ -67,10 +67,13 @@ func handleAddDeposit(addDepositParams []string) error {
 }
 
 func handleSync() error {
-	downloaders := []Downloader{}
+	downloaders := []Downloader{NewNBPDownloader("NBP Downloader", "https://api.nbp.pl/api")}
 
 	for _, downloader := range downloaders {
-		downloader.Download()
+		err := downloader.SyncData()
+		if err != nil {
+			fmt.Println(err)
+		}
 	}
 
 	return nil

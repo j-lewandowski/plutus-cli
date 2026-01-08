@@ -56,9 +56,8 @@ func InitDb() error {
 
 	_, err = db.Exec(`
 	CREATE TABLE IF NOT EXISTS "eur_exchange_rate" (
-		id 				INTEGER 				PRIMARY KEY AUTOINCREMENT,
-		date			DATE						NOT NULL,
-		price_pln	DECIMAL(2, 12)	NOT NULL
+		date									DATE						PRIMARY KEY 	NOT NULL,
+		price_pln_in_grosz		DECIMAL(2, 12)								NOT NULL
 	);`)
 
 	if err != nil {
