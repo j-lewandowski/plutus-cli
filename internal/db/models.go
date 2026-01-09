@@ -120,3 +120,44 @@ func (d *UserRate) From(params NewRateParams) error {
 	d.RateInGrosz = val
 	return nil
 }
+
+type UserIndexPrice struct {
+	Date             time.Time
+	PriceInEurocents int
+}
+
+type NewIndexPriceParams struct {
+	Date             string
+	PriceInEurocents string
+}
+
+func (d *UserIndexPrice) From(params NewIndexPriceParams) error {
+	parsedDate, err := time.Parse(time.DateOnly, params.Date)
+	if err != nil {
+		return err
+	}
+	d.Date = parsedDate
+
+	rateStr := strings.Replace(params.PriceInEurocents, ",", ".", 1)
+	parts := strings.Split(rateStr, ".")
+
+	whole := parts[0]
+	fraction := "00"
+	if len(parts) > 1 {
+		fraction = parts[1]
+		if len(fraction) >= 2 {
+			fraction = fraction[:2]
+		} else {
+			fraction = fraction + "0"
+		}
+	}
+
+	combined := whole + fraction
+	val, err := strconv.Atoi(combined)
+	if err != nil {
+		return err
+	}
+
+	d.PriceInEurocents = val
+	return nil
+}

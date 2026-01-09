@@ -17,6 +17,10 @@ func HandleUserAction() error {
 
 	switch userInput.ActionName {
 	case "add":
+		if err := handleSync(); err != nil {
+			return err
+		}
+
 		if err := handleAddDeposit(userInput.ActionParams); err != nil {
 			return err
 		}
@@ -67,7 +71,10 @@ func handleAddDeposit(addDepositParams []string) error {
 }
 
 func handleSync() error {
-	downloaders := []Downloader{NewNBPDownloader("NBP Downloader", "https://api.nbp.pl/api")}
+	downloaders := []Downloader{
+		NewNBPDownloader("NBP Downloader", "https://api.nbp.pl/api"),
+		NewYahooFinanceDownloader("Yahoo Finance Downloader", "https://query1.finance.yahoo.com"),
+	}
 
 	for _, downloader := range downloaders {
 		err := downloader.SyncData()

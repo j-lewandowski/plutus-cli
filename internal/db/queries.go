@@ -59,12 +59,40 @@ func AddDeposit(deposit UserDeposit) error {
 func AddRates(rates []UserRate) error {
 	db := GetDb()
 
-	sqlStr := "INSERT INTO eur_exchange_rate (date, price_pln_in_grosz) VALUES "
+	sqlStr := "INSERT OR IGNORE INTO eur_exchange_rate (date, price_pln_in_grosz) VALUES "
 	values := []interface{}{}
 
 	for _, rate := range rates {
 		sqlStr += "(?, ?),"
 		values = append(values, rate.Date, rate.RateInGrosz)
+	}
+
+	sqlStr = sqlStr[0 : len(sqlStr)-1]
+
+	stmt, err := db.Prepare(sqlStr)
+
+	if err != nil {
+		return err
+	}
+
+	_, err = stmt.Exec(values...)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func AddIndexPrices(indexPrices []UserIndexPrice) error {
+	db := GetDb()
+
+	sqlStr := "INSERT OR IGNORE INTO index_price (date, price_in_eurocents) VALUES "
+	values := []interface{}{}
+
+	for _, rate := range indexPrices {
+		sqlStr += "(?, ?),"
+		values = append(values, rate.Date, rate.PriceInEurocents)
 	}
 
 	sqlStr = sqlStr[0 : len(sqlStr)-1]
