@@ -38,7 +38,7 @@ type NBPAPIResult struct {
 }
 
 func (d NBPDownloader) SyncData() error {
-	lastDeposit, err := db.GetLastDeposit()
+	lastDeposit, err := db.GetFirstDeposit()
 	if err != nil {
 		return err
 	}
@@ -54,9 +54,9 @@ func (d NBPDownloader) SyncData() error {
 		return err
 	}
 
-	userRates := []db.UserRate{}
+	userRates := []db.CurrencyRate{}
 	for _, rate := range data.Rates {
-		userRate := db.UserRate{}
+		userRate := db.CurrencyRate{}
 		userRate.From(
 			db.NewRateParams{
 				Date: rate.EffectiveDate,
@@ -110,14 +110,14 @@ func (d NBPDownloader) DownloadData(startDate time.Time, endDate time.Time) (NBP
 	return data, nil
 }
 
-func (d NBPDownloader) PopulateMissingData(allDays []time.Time, userRates *[]db.UserRate) {
-	ratesMap := make(map[string]db.UserRate)
+func (d NBPDownloader) PopulateMissingData(allDays []time.Time, userRates *[]db.CurrencyRate) {
+	ratesMap := make(map[string]db.CurrencyRate)
 	for _, r := range *userRates {
 		ratesMap[r.Date.Format(time.DateOnly)] = r
 	}
 
-	var filledRates []db.UserRate
-	var lastRate db.UserRate
+	var filledRates []db.CurrencyRate
+	var lastRate db.CurrencyRate
 	if len(*userRates) > 0 {
 		lastRate = (*userRates)[0]
 	}
@@ -154,7 +154,7 @@ func NewYahooFinanceDownloader(name string, source string) *YahooFinanceDownload
 }
 
 func (d YahooFinanceDownloader) SyncData() error {
-	lastDeposit, err := db.GetLastDeposit()
+	lastDeposit, err := db.GetFirstDeposit()
 	if err != nil {
 		return err
 	}
@@ -180,11 +180,19 @@ func (d YahooFinanceDownloader) SyncData() error {
 				continue
 			}
 
+			// Heuristic to handle unit mismatch from Yahoo Finance
+			// Data sometimes drops by factor of 100 (e.g. 1150 -> 11.50)
+			// Thank you @YahooFinance ;)
+			price := *quotes.Close[i]
+			if price < 200 {
+				price = price * 100
+			}
+
 			userRate := db.IndexPrice{}
 			userRate.From(
 				db.NewIndexPriceParams{
 					Date:             time.Unix(timestamp, 0).Format(time.DateOnly),
-					PriceInEurocents: fmt.Sprintf("%f", *quotes.Close[i]),
+					PriceInEurocents: fmt.Sprintf("%f", price),
 				},
 			)
 

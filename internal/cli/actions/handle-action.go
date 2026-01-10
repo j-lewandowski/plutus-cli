@@ -107,6 +107,11 @@ func handleStatus() error {
 		return err
 	}
 
+	latestExchangeRate, err := db.GetLatestExchangeRate()
+	if err != nil {
+		fmt.Println("Warning: Could not fetch exchange rates.", err)
+	}
+
 	allDeposits, err := db.GetAllDeposits()
 	if err != nil {
 		return err
@@ -131,6 +136,18 @@ func handleStatus() error {
 
 	fmt.Printf("Total Invested: %.2f EUR\n", float64(overallAmountInEurocents)/100)
 	fmt.Printf("Current Value:  %.2f EUR\n", currentValue/100)
-	fmt.Printf("Profit/Loss:    %.2f EUR\n", profitPercentage)
+	fmt.Printf("Profit/Loss:    %.2f EUR (%.2f%%)\n", profitValue/100, profitPercentage)
+
+	if latestExchangeRate.RateInGrosz > 0 {
+		rateVal := float64(latestExchangeRate.RateInGrosz) / 100.0
+		currentValuePLN := (currentValue / 100) * rateVal
+		profitValuePLN := (profitValue / 100) * rateVal
+
+		fmt.Println("---------------------------")
+		fmt.Printf("Rate (1 EUR):   %.4f PLN\n", rateVal)
+		fmt.Printf("Assets Value:   %.2f PLN\n", currentValuePLN)
+		fmt.Printf("Profit/Loss: %.2f PLN\n", profitValuePLN)
+	}
+
 	return nil
 }

@@ -88,7 +88,7 @@ func AddDeposit(deposit UserDeposit) error {
 	return nil
 }
 
-func AddRates(rates []UserRate) error {
+func AddRates(rates []CurrencyRate) error {
 	db := GetDb()
 
 	sqlStr := "INSERT OR IGNORE INTO eur_exchange_rate (date, price_pln_in_grosz) VALUES "
@@ -197,4 +197,22 @@ func GetIndexPriceByDate(date time.Time) (IndexPrice, error) {
 		return IndexPrice{}, err
 	}
 	return indexPrice, nil
+}
+
+func GetLatestExchangeRate() (CurrencyRate, error) {
+	db := GetDb()
+
+	row := db.QueryRow(`
+        SELECT date, price_pln_in_grosz
+        FROM eur_exchange_rate
+        ORDER BY date DESC
+        LIMIT 1;
+    `)
+
+	var rate CurrencyRate
+	if err := row.Scan(&rate.Date, &rate.RateInGrosz); err != nil {
+		return CurrencyRate{}, err
+	}
+
+	return rate, nil
 }

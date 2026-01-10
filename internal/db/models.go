@@ -80,7 +80,7 @@ func (d *UserDeposit) initDate(depositDateInput string) error {
 	return nil
 }
 
-type UserRate struct {
+type CurrencyRate struct {
 	Date        time.Time
 	RateInGrosz int
 }
@@ -90,7 +90,7 @@ type NewRateParams struct {
 	Rate string
 }
 
-func (d *UserRate) From(params NewRateParams) error {
+func (d *CurrencyRate) From(params NewRateParams) error {
 	parsedDate, err := time.Parse(time.DateOnly, params.Date)
 	if err != nil {
 		return err
