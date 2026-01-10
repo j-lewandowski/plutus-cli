@@ -170,7 +170,7 @@ func (d YahooFinanceDownloader) SyncData() error {
 		return err
 	}
 
-	userIndexPriceList := []db.UserIndexPrice{}
+	userIndexPriceList := []db.IndexPrice{}
 	result := data.Chart.Result[0]
 	if len(result.Indicators.Quote) > 0 {
 		quotes := result.Indicators.Quote[0]
@@ -180,7 +180,7 @@ func (d YahooFinanceDownloader) SyncData() error {
 				continue
 			}
 
-			userRate := db.UserIndexPrice{}
+			userRate := db.IndexPrice{}
 			userRate.From(
 				db.NewIndexPriceParams{
 					Date:             time.Unix(timestamp, 0).Format(time.DateOnly),
@@ -247,14 +247,14 @@ func (d YahooFinanceDownloader) DownloadData(startDate time.Time, endDate time.T
 	return data, nil
 }
 
-func (d YahooFinanceDownloader) PopulateMissingData(allDays []time.Time, userIndexPriceList *[]db.UserIndexPrice) {
-	ratesMap := make(map[string]db.UserIndexPrice)
+func (d YahooFinanceDownloader) PopulateMissingData(allDays []time.Time, userIndexPriceList *[]db.IndexPrice) {
+	ratesMap := make(map[string]db.IndexPrice)
 	for _, r := range *userIndexPriceList {
 		ratesMap[r.Date.Format(time.DateOnly)] = r
 	}
 
-	var filledRates []db.UserIndexPrice
-	var lastRate db.UserIndexPrice
+	var filledRates []db.IndexPrice
+	var lastRate db.IndexPrice
 	if len(*userIndexPriceList) > 0 {
 		lastRate = (*userIndexPriceList)[0]
 	}

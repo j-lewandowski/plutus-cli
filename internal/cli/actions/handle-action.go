@@ -32,6 +32,16 @@ func HandleUserAction() error {
 		}
 		return nil
 
+	case "status":
+		if err := handleSync(); err != nil {
+			return err
+		}
+
+		if err := handleStatus(); err != nil {
+			return err
+		}
+		return nil
+
 	case "help":
 		ui.DisplayHelpScreen()
 
@@ -83,5 +93,44 @@ func handleSync() error {
 		}
 	}
 
+	return nil
+}
+
+func handleStatus() error {
+	overallAmountInEurocents, err := db.GetOverallDepositInEurocents()
+	if err != nil {
+		return err
+	}
+
+	latestIndexPrice, err := db.GetLatestIndexPrice()
+	if err != nil {
+		return err
+	}
+
+	allDeposits, err := db.GetAllDeposits()
+	if err != nil {
+		return err
+	}
+
+	var totalUnitsOwned float64
+	for _, deposit := range allDeposits {
+		historicalPrice, err := db.GetIndexPriceByDate(deposit.DepositDate)
+		if err != nil {
+			fmt.Printf("Warning: Could not find index price for date %s. Skipping calculation for this deposit.\n", deposit.DepositDate)
+			continue
+		}
+
+		unitsBought := float64(deposit.DepositAmountInEurocents) / float64(historicalPrice.PriceInEurocents)
+		totalUnitsOwned += unitsBought
+	}
+
+	currentValue := totalUnitsOwned * float64(latestIndexPrice.PriceInEurocents)
+
+	profitValue := currentValue - float64(overallAmountInEurocents)
+	profitPercentage := (profitValue / float64(overallAmountInEurocents)) * 100
+
+	fmt.Printf("Total Invested: %.2f EUR\n", float64(overallAmountInEurocents)/100)
+	fmt.Printf("Current Value:  %.2f EUR\n", currentValue/100)
+	fmt.Printf("Profit/Loss:    %.2f EUR\n", profitPercentage)
 	return nil
 }

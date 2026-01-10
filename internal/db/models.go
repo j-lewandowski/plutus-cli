@@ -121,7 +121,7 @@ func (d *UserRate) From(params NewRateParams) error {
 	return nil
 }
 
-type UserIndexPrice struct {
+type IndexPrice struct {
 	Date             time.Time
 	PriceInEurocents int
 }
@@ -131,7 +131,7 @@ type NewIndexPriceParams struct {
 	PriceInEurocents string
 }
 
-func (d *UserIndexPrice) From(params NewIndexPriceParams) error {
+func (d *IndexPrice) From(params NewIndexPriceParams) error {
 	parsedDate, err := time.Parse(time.DateOnly, params.Date)
 	if err != nil {
 		return err

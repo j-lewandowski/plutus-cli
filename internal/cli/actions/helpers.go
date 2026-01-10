@@ -9,7 +9,7 @@ import (
 )
 
 // @TODO - figure out better way to handle enums because go doesn't really have them :c
-var AvaliableCommands = []string{"add", "sync"}
+var AvaliableCommands = []string{"add", "sync", "status"}
 
 type UserInput struct {
 	ActionName   string
@@ -54,7 +54,7 @@ func DaysUntilToday(startDate time.Time) []time.Time {
 
 	now := time.Now()
 
-	cursor := startDate.AddDate(0, 0, 1)
+	cursor := startDate
 
 	for !cursor.After(now) {
 		days = append(days, cursor)

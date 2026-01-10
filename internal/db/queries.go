@@ -1,5 +1,7 @@
 package db
 
+import "time"
+
 func GetFirstDeposit() (Deposit, error) {
 	db := GetDb()
 
@@ -40,6 +42,36 @@ func GetLastDeposit() (Deposit, error) {
 	}
 
 	return lastDeposit, nil
+}
+
+func GetAllDeposits() ([]Deposit, error) {
+	db := GetDb()
+
+	rows, err := db.Query(`
+        SELECT * FROM deposit
+        ORDER BY deposit_date DESC;
+    `)
+	if err != nil {
+		return []Deposit{}, err
+	}
+	defer rows.Close()
+
+	var deposits []Deposit
+
+	for rows.Next() {
+		var d Deposit
+		if err := rows.Scan(
+			&d.Id,
+			&d.DepositDate,
+			&d.DepositAmountInEurocents,
+			&d.deposit_volume,
+		); err != nil {
+			return []Deposit{}, err
+		}
+		deposits = append(deposits, d)
+	}
+
+	return deposits, nil
 }
 
 func AddDeposit(deposit UserDeposit) error {
@@ -84,7 +116,7 @@ func AddRates(rates []UserRate) error {
 	return nil
 }
 
-func AddIndexPrices(indexPrices []UserIndexPrice) error {
+func AddIndexPrices(indexPrices []IndexPrice) error {
 	db := GetDb()
 
 	sqlStr := "INSERT OR IGNORE INTO index_price (date, price_in_eurocents) VALUES "
@@ -110,4 +142,59 @@ func AddIndexPrices(indexPrices []UserIndexPrice) error {
 	}
 
 	return nil
+}
+
+func GetOverallDepositInEurocents() (int, error) {
+	db := GetDb()
+
+	data := db.QueryRow(`
+		SELECT SUM(deposit_amount_in_eurocents) FROM deposit;
+	`)
+
+	var overallDeposit int = 0
+
+	if err := data.Scan(&overallDeposit); err != nil {
+		return 0, err
+	}
+
+	return overallDeposit, nil
+}
+
+func GetLatestIndexPrice() (IndexPrice, error) {
+	db := GetDb()
+
+	data := db.QueryRow(`
+    SELECT * FROM index_price
+    ORDER BY date DESC
+    LIMIT 1;`)
+
+	lastestIndexPrice := IndexPrice{}
+	if err := data.Scan(
+		&lastestIndexPrice.Date,
+		&lastestIndexPrice.PriceInEurocents); err != nil {
+		return IndexPrice{}, err
+	}
+
+	return lastestIndexPrice, nil
+}
+
+func GetIndexPriceByDate(date time.Time) (IndexPrice, error) {
+	db := GetDb()
+
+	row := db.QueryRow(`
+            SELECT date, price_in_eurocents 
+            FROM index_price 
+            WHERE date <= ?
+            ORDER BY date DESC
+            LIMIT 1;
+    `, date)
+
+	var indexPrice IndexPrice
+	if err := row.Scan(
+		&indexPrice.Date,
+		&indexPrice.PriceInEurocents,
+	); err != nil {
+		return IndexPrice{}, err
+	}
+	return indexPrice, nil
 }
