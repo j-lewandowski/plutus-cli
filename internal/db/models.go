@@ -15,13 +15,14 @@ type NewDepositParams struct {
 
 type UserDeposit struct {
 	Value       int
+	Volume      int64
 	DepositDate time.Time
 }
 type Deposit struct {
 	Id                       int       `db:"id"`
 	DepositDate              time.Time `db:"deposit_date"`
 	DepositAmountInEurocents int       `db:"deposit_amount_in_eurocents"`
-	deposit_volume           float32
+	DepositVolume            int64     `db:"deposit_volume"`
 }
 
 func (d *UserDeposit) From(depositParams NewDepositParams) error {
