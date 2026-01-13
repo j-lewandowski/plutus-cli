@@ -204,3 +204,25 @@ func (d *IndexPrice) From(params NewIndexPriceParams) error {
 	d.PriceInEurocents = val
 	return nil
 }
+
+func (c CurrencyRate) GetDate() time.Time {
+	return c.Date
+}
+
+func (c CurrencyRate) CreateWithDate(date time.Time) interface{} {
+	return CurrencyRate{
+		Date:        date,
+		RateInGrosz: c.RateInGrosz,
+	}
+}
+
+func (i IndexPrice) GetDate() time.Time {
+	return i.Date
+}
+
+func (i IndexPrice) CreateWithDate(date time.Time) interface{} {
+	return IndexPrice{
+		Date:             date,
+		PriceInEurocents: i.PriceInEurocents,
+	}
+}

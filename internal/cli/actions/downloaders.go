@@ -69,9 +69,9 @@ func (d NBPDownloader) SyncData() error {
 		userRates = append(userRates, userRate)
 	}
 
-	d.PopulateMissingData(missingDays, &userRates)
+	populatedRates := PopulateMissingData(missingDays, userRates)
 
-	err = d.repo.AddRates(userRates)
+	err = d.repo.AddRates(populatedRates)
 	if err != nil {
 		return err
 	}
@@ -110,31 +110,6 @@ func (d NBPDownloader) DownloadData(startDate time.Time, endDate time.Time) (NBP
 	}
 
 	return data, nil
-}
-
-func (d NBPDownloader) PopulateMissingData(allDays []time.Time, userRates *[]db.CurrencyRate) {
-	ratesMap := make(map[string]db.CurrencyRate)
-	for _, r := range *userRates {
-		ratesMap[r.Date.Format(time.DateOnly)] = r
-	}
-
-	var filledRates []db.CurrencyRate
-	var lastRate db.CurrencyRate
-	if len(*userRates) > 0 {
-		lastRate = (*userRates)[0]
-	}
-
-	for _, day := range allDays {
-		if rate, ok := ratesMap[day.Format(time.DateOnly)]; ok {
-			lastRate = rate
-		}
-
-		current := lastRate
-		current.Date = day
-		filledRates = append(filledRates, current)
-	}
-
-	*userRates = filledRates
 }
 
 type YahooFinanceDownloader struct {
@@ -204,9 +179,9 @@ func (d YahooFinanceDownloader) SyncData() error {
 		}
 	}
 
-	d.PopulateMissingData(missingDays, &userIndexPriceList)
+	populatedPrices := PopulateMissingData(missingDays, userIndexPriceList)
 
-	err = d.repo.AddIndexPrices(userIndexPriceList)
+	err = d.repo.AddIndexPrices(populatedPrices)
 	if err != nil {
 		return err
 	}
@@ -257,29 +232,4 @@ func (d YahooFinanceDownloader) DownloadData(startDate time.Time, endDate time.T
 	}
 
 	return data, nil
-}
-
-func (d YahooFinanceDownloader) PopulateMissingData(allDays []time.Time, userIndexPriceList *[]db.IndexPrice) {
-	ratesMap := make(map[string]db.IndexPrice)
-	for _, r := range *userIndexPriceList {
-		ratesMap[r.Date.Format(time.DateOnly)] = r
-	}
-
-	var filledRates []db.IndexPrice
-	var lastRate db.IndexPrice
-	if len(*userIndexPriceList) > 0 {
-		lastRate = (*userIndexPriceList)[0]
-	}
-
-	for _, day := range allDays {
-		if rate, ok := ratesMap[day.Format(time.DateOnly)]; ok {
-			lastRate = rate
-		}
-
-		current := lastRate
-		current.Date = day
-		filledRates = append(filledRates, current)
-	}
-
-	*userIndexPriceList = filledRates
 }
