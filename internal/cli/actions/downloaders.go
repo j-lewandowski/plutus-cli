@@ -8,6 +8,8 @@ import (
 	"time"
 )
 
+var ErrNoDeposits = fmt.Errorf("Couldn't perform sync. No deposits found in the database.")
+
 type Downloader interface {
 	SyncData() error
 	GetName() string
@@ -51,7 +53,7 @@ func (d NBPDownloader) SyncData() error {
 	}
 
 	if lastDeposit == (db.Deposit{}) {
-		return fmt.Errorf("Couldn't perform sync. No deposits found in the database.")
+		return ErrNoDeposits
 	}
 
 	missingDays := DaysUntilToday(lastDeposit.DepositDate)
@@ -148,7 +150,7 @@ func (d YahooFinanceDownloader) SyncData() error {
 	}
 
 	if lastDeposit == (db.Deposit{}) {
-		return fmt.Errorf("Couldn't perform sync. No deposits found in the database.")
+		return ErrNoDeposits
 	}
 
 	missingDays := DaysUntilToday(lastDeposit.DepositDate)
