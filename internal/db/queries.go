@@ -155,14 +155,14 @@ func (r *Repository) GetLatestIndexPrice() (IndexPrice, error) {
     ORDER BY date DESC
     LIMIT 1;`)
 
-	lastestIndexPrice := IndexPrice{}
+	latestIndexPrice := IndexPrice{}
 	if err := data.Scan(
-		&lastestIndexPrice.Date,
-		&lastestIndexPrice.PriceInEurocents); err != nil {
+		&latestIndexPrice.Date,
+		&latestIndexPrice.PriceInEurocents); err != nil {
 		return IndexPrice{}, err
 	}
 
-	return lastestIndexPrice, nil
+	return latestIndexPrice, nil
 }
 
 func (r *Repository) GetIndexPriceByDate(date time.Time) (IndexPrice, error) {
