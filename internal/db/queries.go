@@ -16,7 +16,8 @@ func GetFirstDeposit() (Deposit, error) {
 		&firstDeposit.Id,
 		&firstDeposit.DepositDate,
 		&firstDeposit.DepositAmountInEurocents,
-		&firstDeposit.DepositVolume); err != nil {
+		&firstDeposit.DepositVolume,
+		&firstDeposit.DepositVolumePrecision); err != nil {
 		return Deposit{}, err
 	}
 
@@ -37,7 +38,8 @@ func GetLastDeposit() (Deposit, error) {
 		&lastDeposit.Id,
 		&lastDeposit.DepositDate,
 		&lastDeposit.DepositAmountInEurocents,
-		&lastDeposit.DepositVolume); err != nil {
+		&lastDeposit.DepositVolume,
+		&lastDeposit.DepositVolumePrecision); err != nil {
 		return Deposit{}, err
 	}
 
@@ -65,6 +67,7 @@ func GetAllDeposits() ([]Deposit, error) {
 			&d.DepositDate,
 			&d.DepositAmountInEurocents,
 			&d.DepositVolume,
+			&d.DepositVolumePrecision,
 		); err != nil {
 			return []Deposit{}, err
 		}
@@ -78,8 +81,8 @@ func AddDeposit(deposit UserDeposit) error {
 	db := GetDb()
 
 	_, err := db.Exec(`
-	INSERT INTO deposit (deposit_date, deposit_amount_in_eurocents, deposit_volume)
-	VALUES ($1, $2, $3);`, deposit.DepositDate, deposit.Value, deposit.Volume)
+	INSERT INTO deposit (deposit_date, deposit_amount_in_eurocents, deposit_volume, deposit_volume_precision)
+	VALUES ($1, $2, $3, $4);`, deposit.DepositDate, deposit.Value, deposit.Volume, deposit.VolumePrecision)
 
 	if err != nil {
 		return err

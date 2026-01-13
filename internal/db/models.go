@@ -10,19 +10,22 @@ import (
 // User Deposit
 type NewDepositParams struct {
 	DepositAmount string
+	DepositVolume string
 	DepositDate   string
 }
 
 type UserDeposit struct {
-	Value       int
-	Volume      int64
-	DepositDate time.Time
+	Value           int
+	Volume          int64
+	VolumePrecision int
+	DepositDate     time.Time
 }
 type Deposit struct {
 	Id                       int       `db:"id"`
 	DepositDate              time.Time `db:"deposit_date"`
 	DepositAmountInEurocents int       `db:"deposit_amount_in_eurocents"`
 	DepositVolume            int64     `db:"deposit_volume"`
+	DepositVolumePrecision   int       `db:"deposit_volume_precision"`
 }
 
 func (d *UserDeposit) From(depositParams NewDepositParams) error {
@@ -30,10 +33,49 @@ func (d *UserDeposit) From(depositParams NewDepositParams) error {
 		return err
 	}
 
+	if err := d.initVolume(depositParams.DepositVolume); err != nil {
+		return err
+	}
+
 	if err := d.initDate(depositParams.DepositDate); err != nil {
 		return err
 	}
 
+	return nil
+}
+
+func (d *UserDeposit) initVolume(depositVolumeInput string) error {
+	if depositVolumeInput == "" {
+		d.Volume = 0
+		d.VolumePrecision = 0
+		return nil
+	}
+
+	depositVolumeInput = strings.Replace(depositVolumeInput, ",", ".", 1)
+	splittedUserInput := strings.Split(depositVolumeInput, ".")
+
+	if len(splittedUserInput) < 2 {
+		val, err := strconv.ParseInt(depositVolumeInput, 10, 64)
+		if err != nil {
+			return err
+		}
+		d.Volume = val
+		d.VolumePrecision = 0
+		return nil
+	}
+
+	integerPart, fractionalPart := splittedUserInput[0], splittedUserInput[1]
+	fractionalPartLength := len(fractionalPart)
+
+	// Combine integer and fractional parts
+	combined := integerPart + fractionalPart
+	val, err := strconv.ParseInt(combined, 10, 64)
+	if err != nil {
+		return err
+	}
+
+	d.Volume = val
+	d.VolumePrecision = fractionalPartLength
 	return nil
 }
 func (d *UserDeposit) initValue(depositAmountInput string) error {

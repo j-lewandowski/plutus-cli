@@ -36,7 +36,8 @@ func InitDb() error {
 		id 													INTEGER 					PRIMARY KEY 																AUTOINCREMENT,
 		deposit_date								DATE							DEFAULT(datetime(current_timestamp)),
 		deposit_amount_in_eurocents	INTEGER						NOT NULL,
-		deposit_volume							INTEGER				NOT NULL
+		deposit_volume							INTEGER						NOT NULL,
+		deposit_volume_precision		INTEGER						NOT NULL
 	);`)
 
 	if err != nil {
