@@ -5,6 +5,8 @@ import (
 	"plutus-cli/internal/db"
 )
 
+// CalculationPrecision is a fixed-point scaling factor (10^12) used to avoid
+// floating-point rounding errors when computing portfolio units and values.
 const (
 	CalculationPrecision = 1000000000000
 )

@@ -30,7 +30,7 @@ func main() {
 	err = handler.Run()
 
 	if err != nil {
-		fmt.Println("Couln't perform this operation because of an error:", err)
+		fmt.Println("Couldn't perform this operation because of an error:", err)
 		return
 	}
 }

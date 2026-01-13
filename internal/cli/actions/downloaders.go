@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-var ErrNoDeposits = fmt.Errorf("Couldn't perform sync. No deposits found in the database.")
+var ErrNoDeposits = fmt.Errorf("Couldn't perform sync. No deposits found in the database. Please add a deposit first using the 'add' command.")
 
 type Downloader interface {
 	SyncData() error

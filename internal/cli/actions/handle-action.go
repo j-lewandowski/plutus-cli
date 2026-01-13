@@ -10,7 +10,7 @@ import (
 
 type Handler struct {
 	Repo             *db.Repository
-	AvaliableActions []Action
+	AvailableActions []Action
 }
 
 type Action interface {
@@ -171,7 +171,7 @@ func NewHandler(repo *db.Repository) *Handler {
 
 	return &Handler{
 		Repo:             repo,
-		AvaliableActions: actionsList,
+		AvailableActions: actionsList,
 	}
 }
 
@@ -181,7 +181,7 @@ func (h *Handler) Run() error {
 		return err
 	}
 
-	for _, action := range h.AvaliableActions {
+	for _, action := range h.AvailableActions {
 		if action.GetInputTrigger() == userInput.ActionName {
 			return action.Run(userInput.ActionParams)
 		}
@@ -192,7 +192,7 @@ func (h *Handler) Run() error {
 
 func (h *Handler) DisplayHelp() {
 	var entries []ui.HelpEntry
-	for _, action := range h.AvaliableActions {
+	for _, action := range h.AvailableActions {
 		entries = append(entries, ui.HelpEntry{
 			Name:        action.GetInputTrigger(),
 			Description: action.GetDescription(),
