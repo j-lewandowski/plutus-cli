@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"plutus-cli/internal/cli/actions"
-	"plutus-cli/internal/cli/ui"
 	"plutus-cli/internal/db"
 )
 
@@ -15,19 +14,20 @@ func main() {
 		fmt.Println("Error initializing database:", err)
 		return
 	}
+	defer repo.Close()
+
 	helpFlag := flag.Bool("help", false, "help flag")
 
 	flag.Parse()
 
+	handler := actions.NewHandler(repo)
+
 	if *helpFlag {
-		ui.DisplayHelpScreen()
+		handler.DisplayHelp()
 		return
 	}
 
-	handler := actions.NewHandler(repo)
 	err = handler.Run()
-
-	defer repo.Close()
 
 	if err != nil {
 		fmt.Println("Couln't perform this operation because of an error:", err)

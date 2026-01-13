@@ -1,15 +1,10 @@
 package actions
 
 import (
-	"fmt"
 	"os"
-	"slices"
 	"strings"
 	"time"
 )
-
-// @TODO - figure out better way to handle enums because go doesn't really have them :c
-var AvailableCommands = []string{"add", "sync", "status"}
 
 type UserInput struct {
 	ActionName   string
@@ -26,27 +21,12 @@ func ParseUserInput() (UserInput, error) {
 	}
 
 	params := args[2:]
-
-	command, err := ValidateCommand(args[1])
-
-	if err != nil {
-		return UserInput{}, err
-	}
+	command := strings.ToLower(args[1])
 
 	return UserInput{
 		ActionName:   command,
 		ActionParams: params,
 	}, nil
-}
-
-func ValidateCommand(command string) (string, error) {
-	lowercaseCommand := strings.ToLower(command)
-
-	if !slices.Contains(AvailableCommands, lowercaseCommand) {
-		return "", fmt.Errorf("Command not implemented.")
-	}
-
-	return lowercaseCommand, nil
 }
 
 func DaysUntilToday(startDate time.Time) []time.Time {

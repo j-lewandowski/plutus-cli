@@ -1,18 +1,31 @@
 package ui
 
-import "fmt"
+import (
+	"fmt"
+	"os"
+	"text/tabwriter"
+)
 
-func PrintHelp() {
+type HelpEntry struct {
+	Name        string
+	Description string
+}
+
+func PrintHelp(commands []HelpEntry) {
 	fmt.Print("Example usage: \t plutus [options] COMMAND \n\n")
-	fmt.Println("Available Commands:")
-	fmt.Println("\t - add \t\t Allows user to add deposit event.")
-	fmt.Println("\t - sync \t Syncs the CLI with up-to-date market data.")
-	fmt.Println("\t - status \t Displays current portfolio value and profit/loss percentage.")
-	fmt.Print("Global Options: \n")
+
+	w := tabwriter.NewWriter(os.Stdout, 0, 0, 4, ' ', 0)
+	fmt.Fprintln(w, "Available Commands:")
+	for _, cmd := range commands {
+		fmt.Fprintf(w, "\t- %s\t%s\n", cmd.Name, cmd.Description)
+	}
+	w.Flush()
+
+	fmt.Print("\nGlobal Options: \n")
 	fmt.Println("--help \t See more information on a command")
 }
 
-func DisplayHelpScreen() {
+func DisplayHelpScreen(commands []HelpEntry) {
 	PrintBanner()
-	PrintHelp()
+	PrintHelp(commands)
 }

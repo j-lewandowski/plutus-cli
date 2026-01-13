@@ -9,71 +9,50 @@ import (
 )
 
 type Handler struct {
+	Repo             *db.Repository
+	AvaliableActions []Action
+}
+
+type Action interface {
+	Run(args []string) error
+	GetInputTrigger() string
+	GetDescription() string
+}
+
+type ActionData struct {
+	InputTrigger  string
+	CanonicalName string
+	Description   string
+}
+
+func (ad ActionData) GetInputTrigger() string {
+	return ad.InputTrigger
+}
+
+func (ad ActionData) GetDescription() string {
+	return ad.Description
+}
+
+type AddAction struct {
+	ActionData
 	Repo *db.Repository
 }
 
-func NewHandler(repo *db.Repository) *Handler {
-	return &Handler{
-		Repo: repo,
-	}
-}
-
-func (h *Handler) Run() error {
-
-	userInput, err := ParseUserInput()
-
-	if err != nil {
+func (a *AddAction) Run(args []string) error {
+	if err := runSync(a.Repo); err != nil {
 		return err
 	}
 
-	switch userInput.ActionName {
-	case "add":
-		if err := h.handleSync(); err != nil {
-			return err
-		}
-
-		if err := h.handleAddDeposit(userInput.ActionParams); err != nil {
-			return err
-		}
-		return nil
-
-	case "sync":
-		if err := h.handleSync(); err != nil {
-			return err
-		}
-		return nil
-
-	case "status":
-		if err := h.handleSync(); err != nil {
-			return err
-		}
-
-		if err := h.handleStatus(); err != nil {
-			return err
-		}
-		return nil
-
-	case "help":
-		ui.DisplayHelpScreen()
-
-	default:
-		return nil
-	}
-
-	return nil
-}
-
-func (h *Handler) handleAddDeposit(addDepositParams []string) error {
-	if len(addDepositParams) == 0 {
+	if len(args) == 0 {
 		return fmt.Errorf("Not enough parameters passed")
 	}
 
 	parsedDepositParams := db.NewDepositParams{
-		DepositAmount: addDepositParams[0],
+		DepositAmount: args[0],
 	}
 
-	if len(addDepositParams) == 2 {
-		parsedDepositParams.DepositDate = addDepositParams[1]
+	if len(args) == 2 {
+		parsedDepositParams.DepositDate = args[1]
 	}
 
 	deposit := db.UserDeposit{}
@@ -82,19 +61,150 @@ func (h *Handler) handleAddDeposit(addDepositParams []string) error {
 		return err
 	}
 
-	if err := h.Repo.AddDeposit(deposit); err != nil {
+	if err := a.Repo.AddDeposit(deposit); err != nil {
 		return err
 	}
 
 	fmt.Println("Deposit added!")
+	return nil
+}
+
+type SyncAction struct {
+	ActionData
+	Repo *db.Repository
+}
+
+func (a *SyncAction) Run(args []string) error {
+	return runSync(a.Repo)
+}
+
+type StatusAction struct {
+	ActionData
+	Repo *db.Repository
+}
+
+func (a *StatusAction) Run(args []string) error {
+	if err := runSync(a.Repo); err != nil {
+		return err
+	}
+
+	report, err := portfolio.CalculatePortfolio(a.Repo)
+	if err != nil {
+		return err
+	}
+
+	for _, warning := range report.Warnings {
+		fmt.Println(warning)
+	}
+
+	fmt.Printf("Total Invested: %.2f EUR\n", float64(report.TotalInvestedInEurocents)/100.0)
+	fmt.Printf("Current Value:  %.2f EUR\n", float64(report.CurrentValueInEurocents)/100.0)
+	fmt.Printf("Profit/Loss:    %.2f EUR (%.2f%%)\n", float64(report.ProfitValueInEurocents)/100.0, report.ProfitPercent)
+
+	if report.HasExchangeRate {
+		fmt.Println("---------------------------")
+		fmt.Printf("Rate (1 EUR):   %.4f PLN\n", float64(report.RateEURtoPLNInGrosz)/100.0)
+		fmt.Printf("Assets Value:   %.2f PLN\n", float64(report.CurrentValueInGrosz)/100.0)
+		fmt.Printf("Profit/Loss: %.2f PLN\n", float64(report.ProfitValueInGrosz)/100.0)
+	}
 
 	return nil
 }
 
-func (h *Handler) handleSync() error {
+type HelpAction struct {
+	ActionData
+	AllActions []Action
+}
+
+func (a *HelpAction) Run(args []string) error {
+	var entries []ui.HelpEntry
+	for _, action := range a.AllActions {
+		entries = append(entries, ui.HelpEntry{
+			Name:        action.GetInputTrigger(),
+			Description: action.GetDescription(),
+		})
+	}
+	ui.DisplayHelpScreen(entries)
+	return nil
+}
+
+func NewHandler(repo *db.Repository) *Handler {
+	var actionsList []Action
+
+	helpAction := &HelpAction{
+		ActionData: ActionData{
+			InputTrigger:  "help",
+			CanonicalName: "help",
+			Description:   "See more information on a command",
+		},
+	}
+
+	actionsList = []Action{
+		&AddAction{
+			ActionData: ActionData{
+				InputTrigger:  "add",
+				CanonicalName: "add",
+				Description:   "Allows user to add deposit event.",
+			},
+			Repo: repo,
+		},
+		&SyncAction{
+			ActionData: ActionData{
+				InputTrigger:  "sync",
+				CanonicalName: "sync",
+				Description:   "Syncs the CLI with up-to-date market data.",
+			},
+			Repo: repo,
+		},
+		&StatusAction{
+			ActionData: ActionData{
+				InputTrigger:  "status",
+				CanonicalName: "status",
+				Description:   "Displays current portfolio value and profit/loss percentage.",
+			},
+			Repo: repo,
+		},
+		helpAction,
+	}
+
+	helpAction.AllActions = actionsList
+
+	return &Handler{
+		Repo:             repo,
+		AvaliableActions: actionsList,
+	}
+}
+
+func (h *Handler) Run() error {
+	userInput, err := ParseUserInput()
+	if err != nil {
+		return err
+	}
+
+	for _, action := range h.AvaliableActions {
+		if action.GetInputTrigger() == userInput.ActionName {
+			return action.Run(userInput.ActionParams)
+		}
+	}
+
+	return fmt.Errorf("Command not implemented.")
+}
+
+func (h *Handler) DisplayHelp() {
+	var entries []ui.HelpEntry
+	for _, action := range h.AvaliableActions {
+		entries = append(entries, ui.HelpEntry{
+			Name:        action.GetInputTrigger(),
+			Description: action.GetDescription(),
+		})
+	}
+	ui.DisplayHelpScreen(entries)
+}
+
+func runSync(repo *db.Repository) error {
 	downloaders := []Downloader{
-		NewNBPDownloader("NBP Downloader", "https://api.nbp.pl/api", h.Repo),
-		NewYahooFinanceDownloader("Yahoo Finance Downloader", "https://query1.finance.yahoo.com", h.Repo),
+		NewNBPDownloader("NBP Downloader", "https://api.nbp.pl/api", repo),
+		NewYahooFinanceDownloader("Yahoo Finance Downloader", "https://query1.finance.yahoo.com", repo),
 	}
 
 	var wg sync.WaitGroup
@@ -128,29 +238,5 @@ func (h *Handler) handleSync() error {
 	}
 
 	fmt.Println("Sync completed successfully.")
-	return nil
-}
-
-func (h *Handler) handleStatus() error {
-	report, err := portfolio.CalculatePortfolio(h.Repo)
-	if err != nil {
-		return err
-	}
-
-	for _, warning := range report.Warnings {
-		fmt.Println(warning)
-	}
-
-	fmt.Printf("Total Invested: %.2f EUR\n", float64(report.TotalInvestedInEurocents)/100.0)
-	fmt.Printf("Current Value:  %.2f EUR\n", float64(report.CurrentValueInEurocents)/100.0)
-	fmt.Printf("Profit/Loss:    %.2f EUR (%.2f%%)\n", float64(report.ProfitValueInEurocents)/100.0, report.ProfitPercent)
-
-	if report.HasExchangeRate {
-		fmt.Println("---------------------------")
-		fmt.Printf("Rate (1 EUR):   %.4f PLN\n", float64(report.RateEURtoPLNInGrosz)/100.0)
-		fmt.Printf("Assets Value:   %.2f PLN\n", float64(report.CurrentValueInGrosz)/100.0)
-		fmt.Printf("Profit/Loss: %.2f PLN\n", float64(report.ProfitValueInGrosz)/100.0)
-	}
-
 	return nil
 }
