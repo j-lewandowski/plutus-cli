@@ -2,7 +2,6 @@ package db
 
 import (
 	"database/sql"
-	"fmt"
 	"os"
 	"path/filepath"
 
@@ -78,7 +77,6 @@ func (r *Repository) migrate() error {
     );`)
 
 	if err != nil {
-		fmt.Println("Here")
 		return err
 	}
 	return nil

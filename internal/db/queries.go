@@ -84,55 +84,47 @@ func (r *Repository) AddDeposit(deposit UserDeposit) error {
 }
 
 func (r *Repository) AddRates(rates []CurrencyRate) error {
-	sqlStr := "INSERT OR IGNORE INTO eur_exchange_rate (date, price_pln_in_grosz) VALUES "
-	values := []interface{}{}
+	tx, err := r.conn.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	stmt, err := tx.Prepare("INSERT OR IGNORE INTO eur_exchange_rate (date, price_pln_in_grosz) VALUES (?, ?)")
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
 
 	for _, rate := range rates {
-		sqlStr += "(?, ?),"
-		values = append(values, rate.Date, rate.RateInGrosz)
+		if _, err := stmt.Exec(rate.Date, rate.RateInGrosz); err != nil {
+			return err
+		}
 	}
 
-	sqlStr = sqlStr[0 : len(sqlStr)-1]
-
-	stmt, err := r.conn.Prepare(sqlStr)
-
-	if err != nil {
-		return err
-	}
-
-	_, err = stmt.Exec(values...)
-
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return tx.Commit()
 }
 
 func (r *Repository) AddIndexPrices(indexPrices []IndexPrice) error {
-	sqlStr := "INSERT OR IGNORE INTO index_price (date, price_in_eurocents) VALUES "
-	values := []interface{}{}
+	tx, err := r.conn.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	stmt, err := tx.Prepare("INSERT OR IGNORE INTO index_price (date, price_in_eurocents) VALUES (?, ?)")
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
 
 	for _, rate := range indexPrices {
-		sqlStr += "(?, ?),"
-		values = append(values, rate.Date, rate.PriceInEurocents)
+		if _, err := stmt.Exec(rate.Date, rate.PriceInEurocents); err != nil {
+			return err
+		}
 	}
 
-	sqlStr = sqlStr[0 : len(sqlStr)-1]
-
-	stmt, err := r.conn.Prepare(sqlStr)
-
-	if err != nil {
-		return err
-	}
-
-	_, err = stmt.Exec(values...)
-
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return tx.Commit()
 }
 
 func (r *Repository) GetOverallDepositInEurocents() (int, error) {
