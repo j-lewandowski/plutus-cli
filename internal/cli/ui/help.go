@@ -4,7 +4,7 @@ import "fmt"
 
 func PrintHelp() {
 	fmt.Print("Example usage: \t plutus [options] COMMAND \n\n")
-	fmt.Println("Avaliable Commands:")
+	fmt.Println("Available Commands:")
 	fmt.Println("\t - add \t\t Allows user to add deposit event.")
 	fmt.Println("\t - sync \t Syncs the CLI with up-to-date market data.")
 	fmt.Println("\t - status \t Displays current portfolio value and profit/loss percentage.")
