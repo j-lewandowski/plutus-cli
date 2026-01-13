@@ -15,13 +15,15 @@ type Downloader interface {
 type NBPDownloader struct {
 	name       string
 	source     string
+	repo       *db.Repository
 	HttpClient http.Client
 }
 
-func NewNBPDownloader(name string, source string) *NBPDownloader {
+func NewNBPDownloader(name string, source string, repo *db.Repository) *NBPDownloader {
 	return &NBPDownloader{
 		name:   name,
 		source: source,
+		repo:   repo,
 		HttpClient: http.Client{
 			Timeout: 10 * time.Second,
 		},
@@ -38,7 +40,7 @@ type NBPAPIResult struct {
 }
 
 func (d NBPDownloader) SyncData() error {
-	lastDeposit, err := db.GetFirstDeposit()
+	lastDeposit, err := d.repo.GetFirstDeposit()
 	if err != nil {
 		return err
 	}
@@ -69,7 +71,7 @@ func (d NBPDownloader) SyncData() error {
 
 	d.PopulateMissingData(missingDays, &userRates)
 
-	err = db.AddRates(userRates)
+	err = d.repo.AddRates(userRates)
 	if err != nil {
 		return err
 	}
@@ -139,13 +141,15 @@ type YahooFinanceDownloader struct {
 	name       string
 	source     string
 	ticker     string
+	repo       *db.Repository
 	HttpClient *http.Client
 }
 
-func NewYahooFinanceDownloader(name string, source string) *YahooFinanceDownloader {
+func NewYahooFinanceDownloader(name string, source string, repo *db.Repository) *YahooFinanceDownloader {
 	return &YahooFinanceDownloader{
 		name:   name,
 		source: source,
+		repo:   repo,
 		ticker: "P500.DE",
 		HttpClient: &http.Client{
 			Timeout: 10 * time.Second,
@@ -154,7 +158,7 @@ func NewYahooFinanceDownloader(name string, source string) *YahooFinanceDownload
 }
 
 func (d YahooFinanceDownloader) SyncData() error {
-	lastDeposit, err := db.GetFirstDeposit()
+	lastDeposit, err := d.repo.GetFirstDeposit()
 	if err != nil {
 		return err
 	}
@@ -202,7 +206,7 @@ func (d YahooFinanceDownloader) SyncData() error {
 
 	d.PopulateMissingData(missingDays, &userIndexPriceList)
 
-	err = db.AddIndexPrices(userIndexPriceList)
+	err = d.repo.AddIndexPrices(userIndexPriceList)
 	if err != nil {
 		return err
 	}

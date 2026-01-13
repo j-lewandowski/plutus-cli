@@ -23,20 +23,20 @@ type PortfolioReport struct {
 	Warnings []string
 }
 
-func CalculatePortfolio() (*PortfolioReport, error) {
-	overallAmountInEurocents, err := db.GetOverallDepositInEurocents()
+func CalculatePortfolio(repo *db.Repository) (*PortfolioReport, error) {
+	overallAmountInEurocents, err := repo.GetOverallDepositInEurocents()
 	if err != nil {
 		return nil, err
 	}
 
-	latestIndexPrice, err := db.GetLatestIndexPrice()
+	latestIndexPrice, err := repo.GetLatestIndexPrice()
 	if err != nil {
 		return nil, err
 	}
 
-	latestExchangeRate, errExchangeRate := db.GetLatestExchangeRate()
+	latestExchangeRate, errExchangeRate := repo.GetLatestExchangeRate()
 
-	allDeposits, err := db.GetAllDeposits()
+	allDeposits, err := repo.GetAllDeposits()
 	if err != nil {
 		return nil, err
 	}
@@ -57,7 +57,7 @@ func CalculatePortfolio() (*PortfolioReport, error) {
 	for _, deposit := range allDeposits {
 		var unitsScaled int64
 
-		historicalPrice, err := db.GetIndexPriceByDate(deposit.DepositDate)
+		historicalPrice, err := repo.GetIndexPriceByDate(deposit.DepositDate)
 		if err != nil {
 			report.Warnings = append(report.Warnings, fmt.Sprintf("Warning: Could not find index price for date %s. Skipping calculation for this deposit.", deposit.DepositDate))
 			continue

@@ -8,7 +8,7 @@ import (
 	"plutus-cli/internal/portfolio"
 )
 
-func HandleUserAction() error {
+func HandleUserAction(repo *db.Repository) error {
 
 	userInput, err := ParseUserInput()
 
@@ -18,27 +18,27 @@ func HandleUserAction() error {
 
 	switch userInput.ActionName {
 	case "add":
-		if err := handleSync(); err != nil {
+		if err := handleSync(repo); err != nil {
 			return err
 		}
 
-		if err := handleAddDeposit(userInput.ActionParams); err != nil {
+		if err := handleAddDeposit(repo, userInput.ActionParams); err != nil {
 			return err
 		}
 		return nil
 
 	case "sync":
-		if err := handleSync(); err != nil {
+		if err := handleSync(repo); err != nil {
 			return err
 		}
 		return nil
 
 	case "status":
-		if err := handleSync(); err != nil {
+		if err := handleSync(repo); err != nil {
 			return err
 		}
 
-		if err := handleStatus(); err != nil {
+		if err := handleStatus(repo); err != nil {
 			return err
 		}
 		return nil
@@ -53,7 +53,7 @@ func HandleUserAction() error {
 	return nil
 }
 
-func handleAddDeposit(addDepositParams []string) error {
+func handleAddDeposit(repo *db.Repository, addDepositParams []string) error {
 	if len(addDepositParams) == 0 {
 		return errors.New("Not enough parameters passed")
 	}
@@ -72,7 +72,7 @@ func handleAddDeposit(addDepositParams []string) error {
 		return err
 	}
 
-	if err := db.AddDeposit(deposit); err != nil {
+	if err := repo.AddDeposit(deposit); err != nil {
 		return err
 	}
 
@@ -81,10 +81,10 @@ func handleAddDeposit(addDepositParams []string) error {
 	return nil
 }
 
-func handleSync() error {
+func handleSync(repo *db.Repository) error {
 	downloaders := []Downloader{
-		NewNBPDownloader("NBP Downloader", "https://api.nbp.pl/api"),
-		NewYahooFinanceDownloader("Yahoo Finance Downloader", "https://query1.finance.yahoo.com"),
+		NewNBPDownloader("NBP Downloader", "https://api.nbp.pl/api", repo),
+		NewYahooFinanceDownloader("Yahoo Finance Downloader", "https://query1.finance.yahoo.com", repo),
 	}
 
 	for _, downloader := range downloaders {
@@ -97,8 +97,8 @@ func handleSync() error {
 	return nil
 }
 
-func handleStatus() error {
-	report, err := portfolio.CalculatePortfolio()
+func handleStatus(repo *db.Repository) error {
+	report, err := portfolio.CalculatePortfolio(repo)
 	if err != nil {
 		return err
 	}

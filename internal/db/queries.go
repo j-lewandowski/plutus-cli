@@ -2,10 +2,8 @@ package db
 
 import "time"
 
-func GetFirstDeposit() (Deposit, error) {
-	db := GetDb()
-
-	data := db.QueryRow(`
+func (r *Repository) GetFirstDeposit() (Deposit, error) {
+	data := r.conn.QueryRow(`
 		SELECT * FROM deposit
 		ORDER BY deposit_date
 		LIMIT 1;
@@ -24,10 +22,8 @@ func GetFirstDeposit() (Deposit, error) {
 	return firstDeposit, nil
 }
 
-func GetLastDeposit() (Deposit, error) {
-	db := GetDb()
-
-	data := db.QueryRow(`
+func (r *Repository) GetLastDeposit() (Deposit, error) {
+	data := r.conn.QueryRow(`
 		SELECT * FROM deposit
 		ORDER BY deposit_date DESC
 		LIMIT 1;
@@ -46,10 +42,8 @@ func GetLastDeposit() (Deposit, error) {
 	return lastDeposit, nil
 }
 
-func GetAllDeposits() ([]Deposit, error) {
-	db := GetDb()
-
-	rows, err := db.Query(`
+func (r *Repository) GetAllDeposits() ([]Deposit, error) {
+	rows, err := r.conn.Query(`
         SELECT * FROM deposit
         ORDER BY deposit_date DESC;
     `)
@@ -77,10 +71,8 @@ func GetAllDeposits() ([]Deposit, error) {
 	return deposits, nil
 }
 
-func AddDeposit(deposit UserDeposit) error {
-	db := GetDb()
-
-	_, err := db.Exec(`
+func (r *Repository) AddDeposit(deposit UserDeposit) error {
+	_, err := r.conn.Exec(`
 	INSERT INTO deposit (deposit_date, deposit_amount_in_eurocents, deposit_volume, deposit_volume_precision)
 	VALUES ($1, $2, $3, $4);`, deposit.DepositDate, deposit.Value, deposit.Volume, deposit.VolumePrecision)
 
@@ -91,9 +83,7 @@ func AddDeposit(deposit UserDeposit) error {
 	return nil
 }
 
-func AddRates(rates []CurrencyRate) error {
-	db := GetDb()
-
+func (r *Repository) AddRates(rates []CurrencyRate) error {
 	sqlStr := "INSERT OR IGNORE INTO eur_exchange_rate (date, price_pln_in_grosz) VALUES "
 	values := []interface{}{}
 
@@ -104,7 +94,7 @@ func AddRates(rates []CurrencyRate) error {
 
 	sqlStr = sqlStr[0 : len(sqlStr)-1]
 
-	stmt, err := db.Prepare(sqlStr)
+	stmt, err := r.conn.Prepare(sqlStr)
 
 	if err != nil {
 		return err
@@ -119,9 +109,7 @@ func AddRates(rates []CurrencyRate) error {
 	return nil
 }
 
-func AddIndexPrices(indexPrices []IndexPrice) error {
-	db := GetDb()
-
+func (r *Repository) AddIndexPrices(indexPrices []IndexPrice) error {
 	sqlStr := "INSERT OR IGNORE INTO index_price (date, price_in_eurocents) VALUES "
 	values := []interface{}{}
 
@@ -132,7 +120,7 @@ func AddIndexPrices(indexPrices []IndexPrice) error {
 
 	sqlStr = sqlStr[0 : len(sqlStr)-1]
 
-	stmt, err := db.Prepare(sqlStr)
+	stmt, err := r.conn.Prepare(sqlStr)
 
 	if err != nil {
 		return err
@@ -147,10 +135,8 @@ func AddIndexPrices(indexPrices []IndexPrice) error {
 	return nil
 }
 
-func GetOverallDepositInEurocents() (int, error) {
-	db := GetDb()
-
-	data := db.QueryRow(`
+func (r *Repository) GetOverallDepositInEurocents() (int, error) {
+	data := r.conn.QueryRow(`
 		SELECT SUM(deposit_amount_in_eurocents) FROM deposit;
 	`)
 
@@ -163,10 +149,8 @@ func GetOverallDepositInEurocents() (int, error) {
 	return overallDeposit, nil
 }
 
-func GetLatestIndexPrice() (IndexPrice, error) {
-	db := GetDb()
-
-	data := db.QueryRow(`
+func (r *Repository) GetLatestIndexPrice() (IndexPrice, error) {
+	data := r.conn.QueryRow(`
     SELECT * FROM index_price
     ORDER BY date DESC
     LIMIT 1;`)
@@ -181,10 +165,8 @@ func GetLatestIndexPrice() (IndexPrice, error) {
 	return lastestIndexPrice, nil
 }
 
-func GetIndexPriceByDate(date time.Time) (IndexPrice, error) {
-	db := GetDb()
-
-	row := db.QueryRow(`
+func (r *Repository) GetIndexPriceByDate(date time.Time) (IndexPrice, error) {
+	row := r.conn.QueryRow(`
             SELECT date, price_in_eurocents 
             FROM index_price 
             WHERE date <= ?
@@ -202,10 +184,8 @@ func GetIndexPriceByDate(date time.Time) (IndexPrice, error) {
 	return indexPrice, nil
 }
 
-func GetLatestExchangeRate() (CurrencyRate, error) {
-	db := GetDb()
-
-	row := db.QueryRow(`
+func (r *Repository) GetLatestExchangeRate() (CurrencyRate, error) {
+	row := r.conn.QueryRow(`
         SELECT date, price_pln_in_grosz
         FROM eur_exchange_rate
         ORDER BY date DESC

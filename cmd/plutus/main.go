@@ -9,10 +9,10 @@ import (
 )
 
 func main() {
-	err := db.InitDb()
+	repo, err := db.InitDb()
 
 	if err != nil {
-		fmt.Println("Couln't initialize database:", err)
+		fmt.Println("Error initializing database:", err)
 		return
 	}
 	helpFlag := flag.Bool("help", false, "help flag")
@@ -24,9 +24,9 @@ func main() {
 		return
 	}
 
-	err = actions.HandleUserAction()
+	err = actions.HandleUserAction(repo)
 
-	defer db.Close()
+	defer repo.Close()
 
 	if err != nil {
 		fmt.Println("Couln't perform this operation because of an error:", err)
