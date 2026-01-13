@@ -24,7 +24,8 @@ func main() {
 		return
 	}
 
-	err = actions.HandleUserAction(repo)
+	handler := actions.NewHandler(repo)
+	err = handler.Run()
 
 	defer repo.Close()
 

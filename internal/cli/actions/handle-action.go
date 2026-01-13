@@ -8,7 +8,17 @@ import (
 	"plutus-cli/internal/portfolio"
 )
 
-func HandleUserAction(repo *db.Repository) error {
+type Handler struct {
+	Repo *db.Repository
+}
+
+func NewHandler(repo *db.Repository) *Handler {
+	return &Handler{
+		Repo: repo,
+	}
+}
+
+func (h *Handler) Run() error {
 
 	userInput, err := ParseUserInput()
 
@@ -18,27 +28,27 @@ func HandleUserAction(repo *db.Repository) error {
 
 	switch userInput.ActionName {
 	case "add":
-		if err := handleSync(repo); err != nil {
+		if err := h.handleSync(); err != nil {
 			return err
 		}
 
-		if err := handleAddDeposit(repo, userInput.ActionParams); err != nil {
+		if err := h.handleAddDeposit(userInput.ActionParams); err != nil {
 			return err
 		}
 		return nil
 
 	case "sync":
-		if err := handleSync(repo); err != nil {
+		if err := h.handleSync(); err != nil {
 			return err
 		}
 		return nil
 
 	case "status":
-		if err := handleSync(repo); err != nil {
+		if err := h.handleSync(); err != nil {
 			return err
 		}
 
-		if err := handleStatus(repo); err != nil {
+		if err := h.handleStatus(); err != nil {
 			return err
 		}
 		return nil
@@ -53,7 +63,7 @@ func HandleUserAction(repo *db.Repository) error {
 	return nil
 }
 
-func handleAddDeposit(repo *db.Repository, addDepositParams []string) error {
+func (h *Handler) handleAddDeposit(addDepositParams []string) error {
 	if len(addDepositParams) == 0 {
 		return errors.New("Not enough parameters passed")
 	}
@@ -72,7 +82,7 @@ func handleAddDeposit(repo *db.Repository, addDepositParams []string) error {
 		return err
 	}
 
-	if err := repo.AddDeposit(deposit); err != nil {
+	if err := h.Repo.AddDeposit(deposit); err != nil {
 		return err
 	}
 
@@ -81,10 +91,10 @@ func handleAddDeposit(repo *db.Repository, addDepositParams []string) error {
 	return nil
 }
 
-func handleSync(repo *db.Repository) error {
+func (h *Handler) handleSync() error {
 	downloaders := []Downloader{
-		NewNBPDownloader("NBP Downloader", "https://api.nbp.pl/api", repo),
-		NewYahooFinanceDownloader("Yahoo Finance Downloader", "https://query1.finance.yahoo.com", repo),
+		NewNBPDownloader("NBP Downloader", "https://api.nbp.pl/api", h.Repo),
+		NewYahooFinanceDownloader("Yahoo Finance Downloader", "https://query1.finance.yahoo.com", h.Repo),
 	}
 
 	for _, downloader := range downloaders {
@@ -97,8 +107,8 @@ func handleSync(repo *db.Repository) error {
 	return nil
 }
 
-func handleStatus(repo *db.Repository) error {
-	report, err := portfolio.CalculatePortfolio(repo)
+func (h *Handler) handleStatus() error {
+	report, err := portfolio.CalculatePortfolio(h.Repo)
 	if err != nil {
 		return err
 	}
