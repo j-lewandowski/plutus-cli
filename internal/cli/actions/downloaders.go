@@ -10,6 +10,7 @@ import (
 
 type Downloader interface {
 	SyncData() error
+	GetName() string
 }
 
 type NBPDownloader struct {
@@ -28,6 +29,10 @@ func NewNBPDownloader(name string, source string, repo *db.Repository) *NBPDownl
 			Timeout: 10 * time.Second,
 		},
 	}
+}
+
+func (d NBPDownloader) GetName() string {
+	return d.name
 }
 
 type NBPAPIResult struct {
@@ -130,6 +135,10 @@ func NewYahooFinanceDownloader(name string, source string, repo *db.Repository) 
 			Timeout: 10 * time.Second,
 		},
 	}
+}
+
+func (d YahooFinanceDownloader) GetName() string {
+	return d.name
 }
 
 func (d YahooFinanceDownloader) SyncData() error {

@@ -6,6 +6,7 @@ import (
 	"plutus-cli/internal/cli/ui"
 	"plutus-cli/internal/db"
 	"plutus-cli/internal/portfolio"
+	"sync"
 )
 
 type Handler struct {
@@ -97,13 +98,37 @@ func (h *Handler) handleSync() error {
 		NewYahooFinanceDownloader("Yahoo Finance Downloader", "https://query1.finance.yahoo.com", h.Repo),
 	}
 
+	var wg sync.WaitGroup
+	errChan := make(chan error, len(downloaders))
+
 	for _, downloader := range downloaders {
-		err := downloader.SyncData()
-		if err != nil {
-			fmt.Println(err)
+		wg.Add(1)
+
+		go func(d Downloader) {
+			defer wg.Done()
+			if err := d.SyncData(); err != nil {
+				errChan <- fmt.Errorf("%s failed: %w", d.GetName(), err)
+			}
+		}(downloader)
+	}
+
+	wg.Wait()
+	close(errChan)
+
+	var combinedError error
+	for err := range errChan {
+		if combinedError == nil {
+			combinedError = err
+		} else {
+			fmt.Println("Error:", err)
 		}
 	}
 
+	if combinedError != nil {
+		return fmt.Errorf("sync completed with errors")
+	}
+
+	fmt.Println("Sync completed successfully.")
 	return nil
 }
 
