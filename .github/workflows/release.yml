@@ -1,0 +1,47 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+
+      - name: Build binaries
+        run: |
+          mkdir dist
+
+          # Linux
+          GOOS=linux GOARCH=amd64 go build -o dist/plutus-cli-linux-amd64
+          GOOS=linux GOARCH=arm64 go build -o dist/plutus-cli-linux-arm64
+
+          # macOS
+          GOOS=darwin GOARCH=amd64 go build -o dist/plutus-cli-mac-amd64
+          GOOS=darwin GOARCH=arm64 go build -o dist/plutus-cli-mac-arm64
+
+          # Windows
+          GOOS=windows GOARCH=amd64 go build -o dist/plutus-cli-windows-amd64.exe
+          GOOS=windows GOARCH=arm64 go build -o dist/plutus-cli-windows-arm64.exe
+
+      - name: Create checksums
+        run: |
+          sha256sum dist/* > dist/checksums.txt
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/*
