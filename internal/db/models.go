@@ -1,13 +1,12 @@
 package db
 
 import (
-	"math"
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
 )
 
-// User Deposit
 type NewDepositParams struct {
 	DepositAmount string
 	DepositVolume string
@@ -79,26 +78,35 @@ func (d *UserDeposit) initVolume(depositVolumeInput string) error {
 	return nil
 }
 func (d *UserDeposit) initValue(depositAmountInput string) error {
-	// @TODO - Handle numbers with precition greater than 2 decimals
 	depositAmountInput = strings.Replace(depositAmountInput, ",", ".", 1)
 
-	splittedUserInput := strings.Split(depositAmountInput, ".")
+	parts := strings.Split(depositAmountInput, ".")
 
-	if len(splittedUserInput) < 2 {
-		splittedUserInput = []string{depositAmountInput, "0"}
+	if len(parts) > 1 && len(parts[1]) > 2 {
+		return fmt.Errorf("Deposit amount cannot have more than 2 decimal places")
 	}
 
-	integerPart, fractionalPart := splittedUserInput[0], splittedUserInput[1]
-	fractionalPartLength := len(fractionalPart)
+	integerPart := parts[0]
+	if integerPart == "" {
+		integerPart = "0"
+	}
 
-	parsedIntegerPart, err := strconv.Atoi(integerPart)
-	parsedFractionalPart, err := strconv.Atoi(fractionalPart)
+	fractionalPart := "00"
+	if len(parts) > 1 {
+		fractionalPart = parts[1]
+		if len(fractionalPart) == 1 {
+			fractionalPart = fractionalPart + "0"
+		}
+	}
+
+	combined := integerPart + fractionalPart
+	val, err := strconv.Atoi(combined)
 
 	if err != nil {
 		return err
 	}
 
-	d.Value = parsedIntegerPart*int(math.Pow(10, float64(fractionalPartLength))) + parsedFractionalPart
+	d.Value = val
 	return nil
 }
 func (d *UserDeposit) initDate(depositDateInput string) error {

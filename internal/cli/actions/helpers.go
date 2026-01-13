@@ -1,7 +1,7 @@
 package actions
 
 import (
-	"errors"
+	"fmt"
 	"os"
 	"slices"
 	"strings"
@@ -43,7 +43,7 @@ func ValidateCommand(command string) (string, error) {
 	lowercaseCommand := strings.ToLower(command)
 
 	if !slices.Contains(AvailableCommands, lowercaseCommand) {
-		return "", errors.New("Command not implemented.")
+		return "", fmt.Errorf("Command not implemented.")
 	}
 
 	return lowercaseCommand, nil

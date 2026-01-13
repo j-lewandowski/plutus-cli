@@ -1,7 +1,6 @@
 package actions
 
 import (
-	"errors"
 	"fmt"
 	"plutus-cli/internal/cli/ui"
 	"plutus-cli/internal/db"
@@ -66,7 +65,7 @@ func (h *Handler) Run() error {
 
 func (h *Handler) handleAddDeposit(addDepositParams []string) error {
 	if len(addDepositParams) == 0 {
-		return errors.New("Not enough parameters passed")
+		return fmt.Errorf("Not enough parameters passed")
 	}
 
 	parsedDepositParams := db.NewDepositParams{
