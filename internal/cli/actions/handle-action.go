@@ -39,10 +39,6 @@ type AddAction struct {
 }
 
 func (a *AddAction) Run(args []string) error {
-	if err := runSync(a.Repo); err != nil {
-		return err
-	}
-
 	if len(args) == 0 {
 		return fmt.Errorf("Not enough parameters passed")
 	}
@@ -66,6 +62,11 @@ func (a *AddAction) Run(args []string) error {
 	}
 
 	fmt.Println("Deposit added!")
+
+	if err := runSync(a.Repo); err != nil {
+		return err
+	}
+
 	return nil
 }
 
