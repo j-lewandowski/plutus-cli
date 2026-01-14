@@ -1,6 +1,9 @@
 package db
 
-import "time"
+import (
+	"database/sql"
+	"time"
+)
 
 func (r *Repository) GetFirstDeposit() (Deposit, error) {
 	data := r.conn.QueryRow(`
@@ -16,6 +19,9 @@ func (r *Repository) GetFirstDeposit() (Deposit, error) {
 		&firstDeposit.DepositAmountInEurocents,
 		&firstDeposit.DepositVolume,
 		&firstDeposit.DepositVolumePrecision); err != nil {
+		if err == sql.ErrNoRows {
+			return Deposit{}, nil
+		}
 		return Deposit{}, err
 	}
 
@@ -36,6 +42,9 @@ func (r *Repository) GetLastDeposit() (Deposit, error) {
 		&lastDeposit.DepositAmountInEurocents,
 		&lastDeposit.DepositVolume,
 		&lastDeposit.DepositVolumePrecision); err != nil {
+		if err == sql.ErrNoRows {
+			return Deposit{}, nil
+		}
 		return Deposit{}, err
 	}
 
