@@ -2,6 +2,7 @@ package db
 
 import (
 	"database/sql"
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -17,13 +18,20 @@ func NewRepository(db *sql.DB) *Repository {
 }
 
 func InitDb() (*Repository, error) {
+	var dbPath string
 
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return nil, err
+	envPath := os.Getenv("PLUTUS_DB")
+
+	if envPath != "" {
+		dbPath = envPath
+		fmt.Printf("Using database path from PLUTUS_DB: %s\n", dbPath)
+	} else {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return nil, err
+		}
+		dbPath = filepath.Join(home, ".plutus.sqlite")
 	}
-
-	dbPath := filepath.Join(home, ".plutus.sqlite")
 
 	db, err := sql.Open("sqlite", dbPath)
 	if err != nil {
