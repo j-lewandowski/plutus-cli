@@ -10,3 +10,8 @@ dev_plutus.sqlite
 
 *.test
 *.out
+
+plutus_test_bin
+tests/test_db.sqlite
+tests/snapshot_before.txt
+tests/expected.txt
