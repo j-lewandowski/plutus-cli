@@ -24,10 +24,10 @@ echo -e "\n--- 2. STATUS ---" >> $OUTPUT_FILE
 $BINARY status >> $OUTPUT_FILE 2>&1
 
 echo -e "\n--- 3. ADD DEPOSIT (100 EUR) ---" >> $OUTPUT_FILE
-$BINARY add 100 2025-12-01 >> $OUTPUT_FILE 2>&1
+$BINARY add 100 01-12-2025 >> $OUTPUT_FILE 2>&1
 
 echo -e "\n--- 4. ADD DEPOSIT (50.50 EUR) ---" >> $OUTPUT_FILE
-$BINARY add 50.50 2025-12-01 >> $OUTPUT_FILE 2>&1
+$BINARY add 50.50 01-12-2025 >> $OUTPUT_FILE 2>&1
 
 echo -e "\n--- 5. STATUS ---" >> $OUTPUT_FILE
 $BINARY status >> $OUTPUT_FILE 2>&1

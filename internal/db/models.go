@@ -111,23 +111,19 @@ func (d *UserDeposit) initValue(depositAmountInput string) error {
 }
 func (d *UserDeposit) initDate(depositDateInput string) error {
 	if depositDateInput == "" {
-		d.DepositDate = time.Now()
+		d.DepositDate = time.Now().Local()
 		return nil
 	}
 
-	possibleFormats := []string{"02.01.2006", "02-01-2006", time.DateOnly}
+	normalized := strings.ReplaceAll(depositDateInput, ".", "-")
 
-	for _, format := range possibleFormats {
-
-		parsedTime, err := time.Parse(format, depositDateInput)
-		if err != nil {
-			continue
-		}
-
-		d.DepositDate = parsedTime
-		return nil
+	const layout = "02-01-2006"
+	parsedTime, err := time.Parse(layout, normalized)
+	if err != nil {
+		return fmt.Errorf("invalid date format: '%s'. Use DD.MM.YYYY or DD-MM-YYYY", depositDateInput)
 	}
 
+	d.DepositDate = parsedTime
 	return nil
 }
 
