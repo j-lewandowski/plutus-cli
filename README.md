@@ -39,8 +39,8 @@ Plutus is distributed as a single executable and does not require an interpreter
 
 ## Supported Assets
 
-> **Note:** As of version **1.0.0**, Plutus only supports **Invesco S&P 500 UCITS ETF (P500.DE)**.
->
+> [!NOTE]
+> As of version **1.0.0**, Plutus only supports **Invesco S&P 500 UCITS ETF (P500.DE)**.
 > There are plans to implement custom configuration in future releases, allowing users to track any index or asset they prefer.
 
 ---
@@ -66,7 +66,10 @@ plutus add <amount> [date]
 ```
 
 - **amount**: The amount of money deposited (e.g., `100`, `125.50`).
-- **date** (optional): The date of the deposit. Supported formats: `DD.MM.YYYY`, `DD-MM-YYYY`, `YYYY-MM-DD`.
+- **date** (optional): The date of the deposit. Supported formats: `DD.MM.YYYY`, `DD-MM-YYYY`.
+
+> [!IMPORTANT]
+> Prior to version **2.0.0**, the ISO 8601 format `YYYY-MM-DD` was accepted. Starting from version **2.0.0**, this format is no longer supported. If you used `YYYY-MM-DD` in scripts or workflows, update them to use one of the supported formats above.
 
 ### `sync`
 
