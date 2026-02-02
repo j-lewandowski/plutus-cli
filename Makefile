@@ -19,7 +19,7 @@ else
     EXT =
 endif
 
-.PHONY: all build run clean test-update
+.PHONY: all build run clean test-update dashboard
 
 all: build
 
@@ -29,16 +29,18 @@ build:
 	@echo "✅ Build complete: $(BINARY_NAME)$(EXT)"
 
 run:
-	@echo "🔧 Running command in DEV mode..."
-	PLUTUS_DB=$(DEV_DB) go run ./cmd/plutus $(args)
+	@PLUTUS_DB=$(DEV_DB) go run ./cmd/plutus $(filter-out $@,$(MAKECMDGOALS))
 
 clean:
-	@echo "🧹 Cleaning up..."
-	$(RM) $(BINARY_NAME)$(EXT)
-	$(RM) $(DEV_DB)
-	@echo "✨ Cleaned."
+	@$(RM) $(BINARY_NAME)$(EXT)
+	@$(RM) $(DEV_DB)
 
 test-update:
-	@echo "🧪 Testing update notifier..."
 	@rm -f ~/.plutus_update_check
 	@PLUTUS_DEBUG_UPDATE=true go run -ldflags "-X '$(PKG).Version=v0.0.1'" ./cmd/plutus status
+
+dashboard:
+	@PLUTUS_DB=$(DEV_DB) go run ./cmd/plutus dashboard
+
+%:
+	@:

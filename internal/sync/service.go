@@ -194,7 +194,7 @@ func (d YahooFinanceDownloader) SyncData() error {
 
 			userRate := db.IndexPrice{IsReal: true}
 			userRate.From(db.NewIndexPriceParams{
-				Date:             time.Unix(timestamp, 0).Format(time.DateOnly),
+				Date:             time.Unix(timestamp, 0).Format("2006-01-02"),
 				PriceInEurocents: fmt.Sprintf("%f", avgPrice),
 			})
 

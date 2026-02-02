@@ -54,7 +54,7 @@ func (r *Repository) GetAllDeposits() ([]Deposit, error) {
 	rows, err := r.conn.Query(`
         SELECT * FROM deposit
         ORDER BY deposit_date DESC;
-    `)
+  `)
 	if err != nil {
 		return []Deposit{}, err
 	}
@@ -189,11 +189,11 @@ func (r *Repository) GetIndexPriceByDate(date time.Time) (IndexPrice, error) {
 
 func (r *Repository) GetLatestExchangeRate() (CurrencyRate, error) {
 	row := r.conn.QueryRow(`
-        SELECT date, price_pln_in_grosz
-        FROM eur_exchange_rate
-        ORDER BY date DESC
-        LIMIT 1;
-    `)
+		SELECT date, price_pln_in_grosz
+		FROM eur_exchange_rate
+		ORDER BY date DESC
+		LIMIT 1;
+  `)
 
 	var rate CurrencyRate
 	if err := row.Scan(&rate.Date, &rate.RateInGrosz); err != nil {
@@ -201,4 +201,55 @@ func (r *Repository) GetLatestExchangeRate() (CurrencyRate, error) {
 	}
 
 	return rate, nil
+}
+
+func (r *Repository) GetChartPoints() ([]ChartPoint, error) {
+	rows, err := r.conn.Query(`
+		WITH RECURSIVE dates(date) AS (
+			SELECT MIN(deposit_date) FROM deposit
+			UNION ALL
+			SELECT date(date, '+1 day') FROM dates WHERE date < date('now')
+		),
+		daily_totals AS (
+			SELECT 
+				d.date,
+				(SELECT SUM(deposit_amount_in_eurocents) FROM deposit WHERE deposit_date <= d.date) as total_invested,
+				(SELECT SUM(deposit_volume) FROM deposit WHERE deposit_date <= d.date) as total_volume,
+				(SELECT COALESCE(deposit_volume_precision, 0) FROM deposit LIMIT 1) as precision
+			FROM dates d
+		)
+		SELECT 
+			dt.date,
+			CAST(dt.total_invested AS REAL) / 100 as invested_eur,
+			CAST((dt.total_volume * COALESCE(p.price_in_eurocents, 0)) AS REAL) / (100.0 * POWER(10, dt.precision)) as market_value_eur
+		FROM daily_totals dt
+		LEFT JOIN index_price p ON p.date = (
+			SELECT date FROM index_price 
+			WHERE date <= dt.date AND is_real = 1 
+			ORDER BY date DESC LIMIT 1
+		)
+		WHERE dt.total_invested IS NOT NULL;
+	`)
+
+	if err != nil {
+		return []ChartPoint{}, err
+	}
+
+	defer rows.Close()
+
+	var chartPoints []ChartPoint
+
+	for rows.Next() {
+		var d ChartPoint
+		if err := rows.Scan(
+			&d.Date,
+			&d.Invested,
+			&d.Value,
+		); err != nil {
+			return []ChartPoint{}, err
+		}
+		chartPoints = append(chartPoints, d)
+	}
+
+	return chartPoints, nil
 }

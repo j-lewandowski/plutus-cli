@@ -231,3 +231,9 @@ func (i IndexPrice) CreateWithDate(date time.Time) interface{} {
 		PriceInEurocents: i.PriceInEurocents,
 	}
 }
+
+type ChartPoint struct {
+	Date     string
+	Invested float64
+	Value    float64
+}
