@@ -16,6 +16,8 @@ var addCmd = &cobra.Command{
 	Short: "Adds a new deposit",
 	Args:  cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		repo := cmd.Context().Value("db").(*db.Repository)
+
 		params := db.NewDepositParams{
 			DepositAmount: args[0],
 		}

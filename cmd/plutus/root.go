@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"plutus-cli/internal/cli/ui"
@@ -8,8 +9,6 @@ import (
 
 	"github.com/spf13/cobra"
 )
-
-var repo *db.Repository
 
 func init() {
 	rootCmd.SetHelpFunc(func(cmd *cobra.Command, args []string) {
@@ -29,8 +28,9 @@ var rootCmd = &cobra.Command{
 }
 
 func Execute(database *db.Repository) {
-	repo = database
-	if err := rootCmd.Execute(); err != nil {
+	ctx := context.WithValue(context.Background(), "db", database)
+
+	if err := rootCmd.ExecuteContext(ctx); err != nil {
 		os.Exit(1)
 	}
 }

@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"plutus-cli/internal/db" // 1. Add this import
 	"plutus-cli/internal/portfolio"
 	"plutus-cli/internal/sync"
 
@@ -16,7 +17,8 @@ var statusCmd = &cobra.Command{
 	Use:   "status",
 	Short: "Displays current portfolio value",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		// 1. Sprawdź czy baza w ogóle ma depozyty
+		repo := cmd.Context().Value("db").(*db.Repository)
+
 		total, err := repo.GetOverallDepositInEurocents()
 		if err != nil {
 			return fmt.Errorf("database error: %w", err)
