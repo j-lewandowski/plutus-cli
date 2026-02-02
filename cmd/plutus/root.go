@@ -25,6 +25,9 @@ var rootCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		cmd.Help()
 	},
+	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		ui.CheckForUpdates(Version)
+	},
 }
 
 func Execute(database *db.Repository) {

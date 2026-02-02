@@ -1,5 +1,6 @@
 /plutus
 plutus.exe
+/plutus_dev
 dev_plutus.sqlite
 *.sqlite
 *.db

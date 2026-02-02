@@ -1,17 +1,17 @@
-var (
-	Version   = "dev"
-	Commit    = ""
-	BuildTime = "unknown"
+package main
+
+import (
+	"fmt"
+	"runtime"
+
+	"github.com/spf13/cobra"
 )
 
-func Execute(r *db.Repository) {
-	repo = r
-	rootCmd.Version = Version
-
-	if err := rootCmd.Execute(); err != nil {
-		fmt.Println(err)
-	}
-}
+var (
+	Version   = "dev"
+	Commit    = "none"
+	BuildTime = "unknown"
+)
 
 var versionCmd = &cobra.Command{
 	Use:   "version",
@@ -22,4 +22,8 @@ var versionCmd = &cobra.Command{
 		fmt.Printf("Build Time:  %s\n", BuildTime)
 		fmt.Printf("Go version:  %s\n", runtime.Version())
 	},
+}
+
+func init() {
+	rootCmd.AddCommand(versionCmd)
 }
