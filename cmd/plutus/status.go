@@ -36,9 +36,14 @@ var statusCmd = &cobra.Command{
 			return fmt.Errorf("could not calculate portfolio: %w", err)
 		}
 
-		fmt.Printf("Total Invested: %.2f EUR\n", float64(report.TotalInvestedInEurocents)/100.0)
-		fmt.Printf("Current Value:  %.2f EUR\n", float64(report.CurrentValueInEurocents)/100.0)
-
+		totalInvested := float64(report.TotalInvestedInEurocents) / 100.0
+		currentValue := float64(report.CurrentValueInEurocents) / 100.0
+		fmt.Printf("Total Invested: %.2f EUR\n", totalInvested)
+		fmt.Printf("Current Value:  %.2f EUR\n", currentValue)
+		if totalInvested > 0 {
+			profitLossPct := (currentValue - totalInvested) / totalInvested * 100.0
+			fmt.Printf("Profit/Loss:    %.2f%%\n", profitLossPct)
+		}
 		return nil
 	},
 }
