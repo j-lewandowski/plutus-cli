@@ -111,23 +111,19 @@ func (d *UserDeposit) initValue(depositAmountInput string) error {
 }
 func (d *UserDeposit) initDate(depositDateInput string) error {
 	if depositDateInput == "" {
-		d.DepositDate = time.Time{}
+		d.DepositDate = time.Now().UTC()
 		return nil
 	}
 
-	possibleFormats := []string{"02.01.2006", "02-01-2006", time.DateOnly}
+	normalized := strings.ReplaceAll(depositDateInput, ".", "-")
 
-	for _, format := range possibleFormats {
-
-		parsedTime, err := time.Parse(format, depositDateInput)
-		if err != nil {
-			continue
-		}
-
-		d.DepositDate = parsedTime
-		return nil
+	const layout = "02-01-2006"
+	parsedTime, err := time.Parse(layout, normalized)
+	if err != nil {
+		return fmt.Errorf("Invalid date format: '%s'. Use DD.MM.YYYY or DD-MM-YYYY", depositDateInput)
 	}
 
+	d.DepositDate = parsedTime.UTC()
 	return nil
 }
 
@@ -146,7 +142,7 @@ func (d *CurrencyRate) From(params NewRateParams) error {
 	if err != nil {
 		return err
 	}
-	d.Date = parsedDate
+	d.Date = parsedDate.UTC()
 
 	rateStr := strings.Replace(params.Rate, ",", ".", 1)
 	parts := strings.Split(rateStr, ".")
@@ -187,7 +183,7 @@ func (d *IndexPrice) From(params NewIndexPriceParams) error {
 	if err != nil {
 		return err
 	}
-	d.Date = parsedDate
+	d.Date = parsedDate.UTC()
 
 	rateStr := strings.Replace(params.PriceInEurocents, ",", ".", 1)
 	parts := strings.Split(rateStr, ".")
