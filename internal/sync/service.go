@@ -163,16 +163,27 @@ func (d YahooFinanceDownloader) SyncData() error {
 
 	userIndexPriceList := []db.IndexPrice{}
 	result := data.Chart.Result[0]
+
 	if len(result.Indicators.Quote) > 0 {
 		quotes := result.Indicators.Quote[0]
 
 		for i, timestamp := range result.Timestamp {
-			if i >= len(quotes.Open) || quotes.Open[i] == nil ||
-				quotes.High[i] == nil || quotes.Low[i] == nil || quotes.Close[i] == nil {
+			var avgPrice float64
+
+			hasFullOHLC := i < len(quotes.Open) && quotes.Open[i] != nil &&
+				i < len(quotes.High) && quotes.High[i] != nil &&
+				i < len(quotes.Low) && quotes.Low[i] != nil &&
+				i < len(quotes.Close) && quotes.Close[i] != nil
+
+			hasOpen := i < len(quotes.Open) && quotes.Open[i] != nil
+
+			if hasFullOHLC {
+				avgPrice = (*quotes.Open[i] + *quotes.High[i] + *quotes.Low[i] + *quotes.Close[i]) / 4
+			} else if hasOpen {
+				avgPrice = *quotes.Open[i]
+			} else {
 				continue
 			}
-
-			avgPrice := (*quotes.Open[i] + *quotes.High[i] + *quotes.Low[i] + *quotes.Close[i]) / 4
 
 			// Heuristic to handle unit mismatch from Yahoo Finance
 			// Data sometimes drops by factor of 100 (e.g. 1150 -> 11.50)
