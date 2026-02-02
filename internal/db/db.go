@@ -55,7 +55,6 @@ func (r *Repository) Close() {
 }
 
 func (r *Repository) migrate() error {
-	// 1. Podstawowe tabele
 	queries := []string{
 		`CREATE TABLE IF NOT EXISTS "deposit" (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,

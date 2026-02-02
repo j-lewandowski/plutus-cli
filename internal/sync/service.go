@@ -167,24 +167,24 @@ func (d YahooFinanceDownloader) SyncData() error {
 		quotes := result.Indicators.Quote[0]
 
 		for i, timestamp := range result.Timestamp {
-			if i >= len(quotes.Close) || quotes.Close[i] == nil {
+			if i >= len(quotes.Open) || quotes.Open[i] == nil ||
+				quotes.High[i] == nil || quotes.Low[i] == nil || quotes.Close[i] == nil {
 				continue
 			}
+
+			avgPrice := (*quotes.Open[i] + *quotes.High[i] + *quotes.Low[i] + *quotes.Close[i]) / 4
 
 			// Heuristic to handle unit mismatch from Yahoo Finance
 			// Data sometimes drops by factor of 100 (e.g. 1150 -> 11.50)
 			// Thank you @YahooFinance ;)
-			price := *quotes.Close[i]
-			if price < 200 {
-				price = price * 100
+			if avgPrice < 200 {
+				avgPrice = avgPrice * 100
 			}
 
-			userRate := db.IndexPrice{
-				IsReal: true,
-			}
+			userRate := db.IndexPrice{IsReal: true}
 			userRate.From(db.NewIndexPriceParams{
 				Date:             time.Unix(timestamp, 0).Format(time.DateOnly),
-				PriceInEurocents: fmt.Sprintf("%f", price),
+				PriceInEurocents: fmt.Sprintf("%f", avgPrice),
 			})
 
 			userIndexPriceList = append(userIndexPriceList, userRate)
@@ -201,14 +201,19 @@ func (d YahooFinanceDownloader) SyncData() error {
 	return nil
 }
 
+type YahooQuote struct {
+	Open  []*float64 `json:"open"`
+	High  []*float64 `json:"high"`
+	Low   []*float64 `json:"low"`
+	Close []*float64 `json:"close"`
+}
+
 type YahooChartResponse struct {
 	Chart struct {
 		Result []struct {
 			Timestamp  []int64 `json:"timestamp"`
 			Indicators struct {
-				Quote []struct {
-					Close []*float64 `json:"close"`
-				} `json:"quote"`
+				Quote []YahooQuote `json:"quote"`
 			} `json:"indicators"`
 		} `json:"result"`
 	} `json:"chart"`
