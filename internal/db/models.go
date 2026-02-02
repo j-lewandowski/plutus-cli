@@ -171,6 +171,7 @@ func (d *CurrencyRate) From(params NewRateParams) error {
 type IndexPrice struct {
 	Date             time.Time
 	PriceInEurocents int
+	IsReal           bool
 }
 
 type NewIndexPriceParams struct {

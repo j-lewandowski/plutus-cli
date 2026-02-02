@@ -55,37 +55,48 @@ func (r *Repository) Close() {
 }
 
 func (r *Repository) migrate() error {
-	_, err := r.conn.Exec(`
-    CREATE TABLE IF NOT EXISTS "deposit" (
-        id 													INTEGER 					PRIMARY KEY 																AUTOINCREMENT,
-        deposit_date								DATE							DEFAULT(datetime(current_timestamp)),
-        deposit_amount_in_eurocents	INTEGER						NOT NULL,
-        deposit_volume							INTEGER						NOT NULL,
-        deposit_volume_precision		INTEGER						NOT NULL
-    );`)
-
-	if err != nil {
-		return err
+	// 1. Podstawowe tabele
+	queries := []string{
+		`CREATE TABLE IF NOT EXISTS "deposit" (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			deposit_date DATE DEFAULT(datetime(current_timestamp)),
+			deposit_amount_in_eurocents INTEGER NOT NULL,
+			deposit_volume INTEGER NOT NULL,
+			deposit_volume_precision INTEGER NOT NULL
+		);`,
+		`CREATE TABLE IF NOT EXISTS "eur_exchange_rate" (
+			date DATE PRIMARY KEY NOT NULL,
+			price_pln_in_grosz INTEGER NOT NULL
+		);`,
 	}
 
-	_, err = r.conn.Exec(`
-    CREATE TABLE IF NOT EXISTS "index_price" (
-        date										DATE						PRIMARY KEY 	NOT NULL,
-        price_in_eurocents			INTEGER					NOT NULL
-    );`)
-
-	if err != nil {
-		return err
+	for _, q := range queries {
+		if _, err := r.conn.Exec(q); err != nil {
+			return err
+		}
 	}
 
-	_, err = r.conn.Exec(`
-    CREATE TABLE IF NOT EXISTS "eur_exchange_rate" (
-        date									DATE						PRIMARY KEY 	NOT NULL,
-        price_pln_in_grosz		INTEGER					NOT NULL
-    );`)
+	var columnExists bool
+	err := r.conn.QueryRow(`
+		SELECT EXISTS (
+			SELECT 1 FROM pragma_table_info('index_price') WHERE name='is_real'
+		);
+	`).Scan(&columnExists)
 
-	if err != nil {
-		return err
+	if err != nil || !columnExists {
+		fmt.Println("🔄 Database migration: Rebuilding index_price table...")
+
+		r.conn.Exec(`DROP TABLE IF EXISTS index_price;`)
+		_, err = r.conn.Exec(`
+			CREATE TABLE index_price (
+				date               DATE    PRIMARY KEY NOT NULL,
+				price_in_eurocents INTEGER NOT NULL,
+				is_real            BOOLEAN NOT NULL DEFAULT 0
+			);`)
+		if err != nil {
+			return fmt.Errorf("failed to recreate index_price: %w", err)
+		}
 	}
+
 	return nil
 }
