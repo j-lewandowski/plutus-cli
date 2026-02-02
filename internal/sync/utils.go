@@ -1,4 +1,4 @@
-package actions
+package sync
 
 import "time"
 
@@ -33,4 +33,19 @@ func PopulateMissingData[T DatedItem](allDays []time.Time, items []T) []T {
 	}
 
 	return result
+}
+
+func DaysUntilToday(startDate time.Time) []time.Time {
+	var days []time.Time
+
+	now := time.Now()
+
+	cursor := startDate
+
+	for !cursor.After(now) {
+		days = append(days, cursor)
+		cursor = cursor.AddDate(0, 0, 1)
+	}
+
+	return days
 }
