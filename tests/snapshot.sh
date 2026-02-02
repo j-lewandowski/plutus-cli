@@ -20,13 +20,16 @@ echo "Using database: $PLUTUS_DB"
 echo "--- 1. HELP ---" >> $OUTPUT_FILE
 $BINARY help >> $OUTPUT_FILE 2>&1
 
-echo -e "\n--- 2. ADD DEPOSIT (100 EUR) ---" >> $OUTPUT_FILE
-$BINARY add 100 2023-01-01 >> $OUTPUT_FILE 2>&1
+echo -e "\n--- 2. STATUS ---" >> $OUTPUT_FILE
+$BINARY status >> $OUTPUT_FILE 2>&1
 
-echo -e "\n--- 3. ADD DEPOSIT (50.50 EUR) ---" >> $OUTPUT_FILE
-$BINARY add 50.50 2023-02-01 >> $OUTPUT_FILE 2>&1
+echo -e "\n--- 3. ADD DEPOSIT (100 EUR) ---" >> $OUTPUT_FILE
+$BINARY add 100 2025-12-01 >> $OUTPUT_FILE 2>&1
 
-echo -e "\n--- 4. STATUS ---" >> $OUTPUT_FILE
+echo -e "\n--- 4. ADD DEPOSIT (50.50 EUR) ---" >> $OUTPUT_FILE
+$BINARY add 50.50 2025-12-01 >> $OUTPUT_FILE 2>&1
+
+echo -e "\n--- 5. STATUS ---" >> $OUTPUT_FILE
 $BINARY status >> $OUTPUT_FILE 2>&1
 
 rm -f $BINARY

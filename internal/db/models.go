@@ -111,7 +111,7 @@ func (d *UserDeposit) initValue(depositAmountInput string) error {
 }
 func (d *UserDeposit) initDate(depositDateInput string) error {
 	if depositDateInput == "" {
-		d.DepositDate = time.Time{}
+		d.DepositDate = time.Now()
 		return nil
 	}
 

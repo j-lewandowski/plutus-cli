@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"plutus-cli/internal/portfolio"
+	"plutus-cli/internal/sync"
 
 	"github.com/spf13/cobra"
 )
@@ -15,29 +16,26 @@ var statusCmd = &cobra.Command{
 	Use:   "status",
 	Short: "Displays current portfolio value",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if err := runSync(repo); err != nil {
-			return err
+		// 1. Sprawdź czy baza w ogóle ma depozyty
+		total, err := repo.GetOverallDepositInEurocents()
+		if err != nil {
+			return fmt.Errorf("database error: %w", err)
 		}
+
+		if total == 0 {
+			fmt.Println("Your portfolio is empty. Add your first deposit using: plutus add <amount>")
+			return nil
+		}
+
+		_ = sync.RunSync(repo)
 
 		report, err := portfolio.CalculatePortfolio(repo)
 		if err != nil {
-			return err
-		}
-
-		for _, warning := range report.Warnings {
-			fmt.Println(warning)
+			return fmt.Errorf("could not calculate portfolio: %w", err)
 		}
 
 		fmt.Printf("Total Invested: %.2f EUR\n", float64(report.TotalInvestedInEurocents)/100.0)
 		fmt.Printf("Current Value:  %.2f EUR\n", float64(report.CurrentValueInEurocents)/100.0)
-		fmt.Printf("Profit/Loss:    %.2f EUR (%.2f%%)\n", float64(report.ProfitValueInEurocents)/100.0, report.ProfitPercent)
-
-		if report.HasExchangeRate {
-			fmt.Println("---------------------------")
-			fmt.Printf("Rate (1 EUR):   %.4f PLN\n", float64(report.RateEURtoPLNInGrosz)/100.0)
-			fmt.Printf("Assets Value:   %.2f PLN\n", float64(report.CurrentValueInGrosz)/100.0)
-			fmt.Printf("Profit/Loss: %.2f PLN\n", float64(report.ProfitValueInGrosz)/100.0)
-		}
 
 		return nil
 	},

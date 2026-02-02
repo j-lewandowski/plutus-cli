@@ -13,23 +13,14 @@ func init() {
 
 var addCmd = &cobra.Command{
 	Use:   "add <amount> [date]",
-	Short: "Adds a new deposit to your portfolio",
+	Short: "Adds a new deposit",
 	Args:  cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		fmt.Println("Syncing market data before adding deposit...")
-		if err := runSync(repo); err != nil {
-			return fmt.Errorf("could not sync data before adding: %w", err)
-		}
-
-		amount := args[0]
-		date := ""
-		if len(args) > 1 {
-			date = args[1]
-		}
-
 		params := db.NewDepositParams{
-			DepositAmount: amount,
-			DepositDate:   date,
+			DepositAmount: args[0],
+		}
+		if len(args) == 2 {
+			params.DepositDate = args[1]
 		}
 
 		deposit := db.UserDeposit{}
@@ -41,7 +32,7 @@ var addCmd = &cobra.Command{
 			return err
 		}
 
-		fmt.Println("Deposit added successfully!")
+		fmt.Println("Deposit added!")
 		return nil
 	},
 }

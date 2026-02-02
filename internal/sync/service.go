@@ -1,10 +1,11 @@
-package actions
+package sync
 
 import (
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"plutus-cli/internal/db"
+	"sync"
 	"time"
 )
 
@@ -243,4 +244,43 @@ func (d YahooFinanceDownloader) DownloadData(startDate time.Time, endDate time.T
 	}
 
 	return data, nil
+}
+
+func RunSync(repo *db.Repository) error {
+	downloaders := []Downloader{
+		NewNBPDownloader("NBP Downloader", "https://api.nbp.pl/api", repo),
+		NewYahooFinanceDownloader("Yahoo Finance Downloader", "https://query1.finance.yahoo.com", repo),
+	}
+
+	var wg sync.WaitGroup
+	errChan := make(chan error, len(downloaders))
+
+	for _, downloader := range downloaders {
+		wg.Add(1)
+		go func(d Downloader) {
+			defer wg.Done()
+			if err := d.SyncData(); err != nil {
+				errChan <- fmt.Errorf("%s failed: %w", d.GetName(), err)
+			}
+		}(downloader)
+	}
+
+	wg.Wait()
+	close(errChan)
+
+	var combinedError error
+	for err := range errChan {
+		if combinedError == nil {
+			combinedError = err
+		} else {
+			fmt.Println("Error:", err)
+		}
+	}
+
+	if combinedError != nil {
+		return combinedError
+	}
+
+	fmt.Println("Sync completed successfully.")
+	return nil
 }

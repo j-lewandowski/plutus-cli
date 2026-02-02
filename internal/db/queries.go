@@ -1,6 +1,9 @@
 package db
 
-import "time"
+import (
+	"database/sql"
+	"time"
+)
 
 func (r *Repository) GetFirstDeposit() (Deposit, error) {
 	data := r.conn.QueryRow(`
@@ -10,12 +13,17 @@ func (r *Repository) GetFirstDeposit() (Deposit, error) {
 	`)
 
 	firstDeposit := Deposit{}
-	if err := data.Scan(
+	err := data.Scan(
 		&firstDeposit.Id,
 		&firstDeposit.DepositDate,
 		&firstDeposit.DepositAmountInEurocents,
 		&firstDeposit.DepositVolume,
-		&firstDeposit.DepositVolumePrecision); err != nil {
+		&firstDeposit.DepositVolumePrecision)
+
+	if err == sql.ErrNoRows {
+		return Deposit{}, nil
+	}
+	if err != nil {
 		return Deposit{}, err
 	}
 
@@ -129,7 +137,7 @@ func (r *Repository) AddIndexPrices(indexPrices []IndexPrice) error {
 
 func (r *Repository) GetOverallDepositInEurocents() (int, error) {
 	data := r.conn.QueryRow(`
-		SELECT SUM(deposit_amount_in_eurocents) FROM deposit;
+		SELECT COALESCE(SUM(deposit_amount_in_eurocents), 0) FROM deposit;
 	`)
 
 	var overallDeposit int = 0
