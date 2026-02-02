@@ -14,7 +14,7 @@ func init() {
 var addCmd = &cobra.Command{
 	Use:   "add <amount> [date]",
 	Short: "Adds a new deposit",
-	Args:  cobra.MinimumNArgs(1),
+	Args:  cobra.RangeArgs(1, 2),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		repo := cmd.Context().Value("db").(*db.Repository)
 
