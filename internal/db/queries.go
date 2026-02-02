@@ -120,18 +120,17 @@ func (r *Repository) AddIndexPrices(indexPrices []IndexPrice) error {
 	}
 	defer tx.Rollback()
 
-	stmt, err := tx.Prepare("INSERT OR IGNORE INTO index_price (date, price_in_eurocents) VALUES (?, ?)")
+	stmt, err := tx.Prepare("INSERT OR REPLACE INTO index_price (date, price_in_eurocents, is_real) VALUES (?, ?, ?)")
 	if err != nil {
 		return err
 	}
 	defer stmt.Close()
 
-	for _, rate := range indexPrices {
-		if _, err := stmt.Exec(rate.Date, rate.PriceInEurocents); err != nil {
+	for _, p := range indexPrices {
+		if _, err := stmt.Exec(p.Date, p.PriceInEurocents, p.IsReal); err != nil {
 			return err
 		}
 	}
-
 	return tx.Commit()
 }
 
@@ -151,14 +150,17 @@ func (r *Repository) GetOverallDepositInEurocents() (int, error) {
 
 func (r *Repository) GetLatestIndexPrice() (IndexPrice, error) {
 	data := r.conn.QueryRow(`
-    SELECT * FROM index_price
+    SELECT date, price_in_eurocents, is_real 
+    FROM index_price
     ORDER BY date DESC
     LIMIT 1;`)
 
 	latestIndexPrice := IndexPrice{}
 	if err := data.Scan(
 		&latestIndexPrice.Date,
-		&latestIndexPrice.PriceInEurocents); err != nil {
+		&latestIndexPrice.PriceInEurocents,
+		&latestIndexPrice.IsReal,
+	); err != nil {
 		return IndexPrice{}, err
 	}
 
@@ -167,17 +169,18 @@ func (r *Repository) GetLatestIndexPrice() (IndexPrice, error) {
 
 func (r *Repository) GetIndexPriceByDate(date time.Time) (IndexPrice, error) {
 	row := r.conn.QueryRow(`
-            SELECT date, price_in_eurocents 
-            FROM index_price 
-            WHERE date <= ?
-            ORDER BY date DESC
-            LIMIT 1;
-    `, date)
+			SELECT date, price_in_eurocents, is_real 
+			FROM index_price 
+			WHERE date >= ? AND is_real = 1
+			ORDER BY date ASC 
+			LIMIT 1;
+	`, date)
 
 	var indexPrice IndexPrice
 	if err := row.Scan(
 		&indexPrice.Date,
 		&indexPrice.PriceInEurocents,
+		&indexPrice.IsReal,
 	); err != nil {
 		return IndexPrice{}, err
 	}

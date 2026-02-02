@@ -1,6 +1,9 @@
 package sync
 
-import "time"
+import (
+	"plutus-cli/internal/db"
+	"time"
+)
 
 type DatedItem interface {
 	GetDate() time.Time
@@ -20,16 +23,27 @@ func PopulateMissingData[T DatedItem](allDays []time.Time, items []T) []T {
 
 	for _, day := range allDays {
 		dateStr := day.Format("2006-01-02")
-		if item, exists := itemMap[dateStr]; exists {
+		item, exists := itemMap[dateStr]
+
+		if exists {
 			result = append(result, item)
 			lastKnown = item
 			hasLastKnown = true
-		} else {
-			if hasLastKnown {
-				newItem := lastKnown.CreateWithDate(day).(T)
-				result = append(result, newItem)
-			}
+			continue
 		}
+
+		if !hasLastKnown {
+			continue
+		}
+
+		newItem := lastKnown.CreateWithDate(day).(T)
+
+		if ip, ok := any(newItem).(db.IndexPrice); ok {
+			ip.IsReal = false
+			newItem = any(ip).(T)
+		}
+
+		result = append(result, newItem)
 	}
 
 	return result
