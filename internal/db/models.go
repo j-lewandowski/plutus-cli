@@ -171,6 +171,7 @@ func (d *CurrencyRate) From(params NewRateParams) error {
 type IndexPrice struct {
 	Date             time.Time
 	PriceInEurocents int
+	IsReal           bool
 }
 
 type NewIndexPriceParams struct {
@@ -229,4 +230,10 @@ func (i IndexPrice) CreateWithDate(date time.Time) interface{} {
 		Date:             date,
 		PriceInEurocents: i.PriceInEurocents,
 	}
+}
+
+type ChartPoint struct {
+	Date     string
+	Invested float64
+	Value    float64
 }

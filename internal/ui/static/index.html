@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PLUTUS CLI DASHBOARD</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      :root {
+        --bg-color: #1e2428;
+        --text-main: #e1e1e1;
+        --text-dim: #787878;
+        --accent: #4caf50;
+        --border: #444;
+      }
+
+      body {
+        background-color: var(--bg-color);
+        color: var(--text-main);
+        font-family: "Menlo", "Monaco", "Courier New", monospace;
+        margin: 0;
+        padding: 40px;
+        display: flex;
+        justify-content: center;
+      }
+
+      .terminal-container {
+        width: 100%;
+        max-width: 1000px;
+      }
+
+      .logo-wrapper {
+        text-align: center;
+        margin-bottom: 30px;
+        border-bottom: 1px dashed var(--border);
+        padding-bottom: 30px;
+      }
+
+      .terminal-logo {
+        max-width: 100%;
+        height: auto;
+        display: block;
+        margin: 0 auto;
+
+        image-rendering: pixelated;
+      }
+
+      .separator {
+        border-bottom: 1px dashed var(--text-dim);
+        margin: 20px 0;
+        width: 100%;
+      }
+
+      .section-title {
+        text-align: center;
+        margin-bottom: 10px;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        color: var(--text-dim);
+        font-size: 0.9rem;
+      }
+
+      .stats-row {
+        display: flex;
+        justify-content: space-between;
+        font-size: 1.1rem;
+        margin: 30px 0;
+        padding: 0 10px;
+      }
+
+      .stat-item {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+      }
+
+      .stat-label {
+        color: var(--text-dim);
+        font-size: 0.8rem;
+        text-transform: uppercase;
+      }
+
+      .val-white {
+        color: #fff;
+        font-weight: bold;
+      }
+      .val-green {
+        color: var(--accent);
+        font-weight: bold;
+      }
+      .val-red {
+        color: #ff5555;
+        font-weight: bold;
+      }
+
+      .chart-box {
+        position: relative;
+        height: 400px;
+        width: 100%;
+        border: 1px dashed #333;
+        padding: 10px;
+        box-sizing: border-box;
+      }
+
+      .console-logs {
+        margin-top: 30px;
+        font-size: 0.85rem;
+        color: var(--text-dim);
+      }
+      .log-entry::before {
+        content: "> ";
+        color: var(--accent);
+      }
+      .cursor {
+        display: inline-block;
+        width: 8px;
+        height: 14px;
+        background: var(--text-dim);
+        animation: blink 1s step-end infinite;
+        vertical-align: middle;
+      }
+      @keyframes blink {
+        50% {
+          opacity: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="terminal-container">
+      <div class="separator"></div>
+      <div class="section-title">Welcome to</div>
+
+      <div class="logo-wrapper">
+        <img src="/logo.png" alt="PLUTUS CLI Logo" class="terminal-logo" />
+      </div>
+
+      <div class="section-title">CLI DASHBOARD</div>
+      <div class="separator"></div>
+
+      <div class="stats-row">
+        <div class="stat-item">
+          <span class="stat-label">Total Invested:</span>
+          <span class="val-white" id="invested">LOADING...</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Current Value:</span>
+          <span class="val-white" id="value">LOADING...</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Profit/Loss:</span>
+          <span class="val-white" id="profit">---</span>
+        </div>
+      </div>
+
+      <div class="chart-box">
+        <canvas id="mainChart"></canvas>
+      </div>
+
+      <div class="console-logs">
+        <div class="log-entry">Connection established on port 8055</div>
+        <div class="log-entry">
+          Fetching repository data... <span id="status-msg">OK</span>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const formatEUR = (num) =>
+        new Intl.NumberFormat("de-DE", {
+          style: "currency",
+          currency: "EUR",
+        }).format(num);
+
+      fetch("/api/data")
+        .then((res) => res.json())
+        .then((data) => {
+          if (!data || data.length === 0) return;
+
+          const last = data[data.length - 1];
+
+          const getField = (obj, field) =>
+            obj[field] !== undefined ? obj[field] : obj[field.toLowerCase()];
+
+          const investedVal = getField(last, "Invested");
+          const marketVal = getField(last, "Value");
+
+          document.getElementById("invested").innerText =
+            formatEUR(investedVal);
+          document.getElementById("value").innerText = formatEUR(marketVal);
+
+          const profitVal = marketVal - investedVal;
+          const profitPercent =
+            investedVal > 0 ? (profitVal / investedVal) * 100 : 0;
+
+          const profitEl = document.getElementById("profit");
+          profitEl.innerText = `${profitVal >= 0 ? "+" : ""}${formatEUR(profitVal)} (${profitPercent.toFixed(2)}%)`;
+          profitEl.className = profitVal >= 0 ? "val-green" : "val-red";
+
+          const ctx = document.getElementById("mainChart").getContext("2d");
+
+          const gridColor = "#333";
+          const lineColor = "#e1e1e1";
+          const investedColor = "#555";
+
+          new Chart(ctx, {
+            type: "line",
+            data: {
+              labels: data.map((d) => getField(d, "Date").substring(0, 10)),
+              datasets: [
+                {
+                  label: "MARKET VALUE",
+                  data: data.map((d) => getField(d, "Value")),
+                  borderColor: lineColor,
+                  backgroundColor: "rgba(255, 255, 255, 0.05)",
+                  borderWidth: 2,
+                  tension: 0,
+                  pointRadius: 0,
+                  pointHoverRadius: 6,
+                  pointHoverBackgroundColor: lineColor,
+                  pointHoverBorderColor: "#000",
+                  fill: true,
+                  stepped: false,
+                },
+                {
+                  label: "INVESTED",
+                  data: data.map((d) => getField(d, "Invested")),
+                  borderColor: investedColor,
+                  borderWidth: 2,
+                  borderDash: [5, 5],
+                  pointRadius: 0,
+                  stepped: true,
+                  fill: false,
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              interaction: {
+                mode: "index",
+                intersect: false,
+              },
+              plugins: {
+                legend: {
+                  labels: {
+                    color: "#787878",
+                    font: { family: "Courier New" },
+                    boxWidth: 10,
+                    usePointStyle: true,
+                    pointStyle: "rect",
+                  },
+                },
+                tooltip: {
+                  backgroundColor: "#000",
+                  titleColor: "#fff",
+                  bodyColor: "#fff",
+                  borderColor: "#fff",
+                  borderWidth: 1,
+                  cornerRadius: 0,
+                  titleFont: { family: "Courier New" },
+                  bodyFont: { family: "Courier New" },
+                  displayColors: false,
+                },
+              },
+              scales: {
+                x: {
+                  grid: {
+                    color: gridColor,
+                    borderDash: [2, 2],
+                    drawBorder: false,
+                  },
+                  ticks: {
+                    color: "#787878",
+                    font: { family: "Courier New" },
+                    maxRotation: 0,
+                    autoSkip: true,
+                    maxTicksLimit: 6,
+                  },
+                },
+                y: {
+                  grid: {
+                    color: gridColor,
+                    borderDash: [2, 2],
+                    drawBorder: false,
+                  },
+                  ticks: {
+                    color: "#787878",
+                    font: { family: "Courier New" },
+                    callback: function (value) {
+                      return value + " €";
+                    },
+                  },
+                },
+              },
+            },
+          });
+        });
+    </script>
+  </body>
+</html>
