@@ -1,7 +1,6 @@
 package portfolio
 
 import (
-	"fmt"
 	"plutus-cli/internal/db"
 )
 
@@ -12,7 +11,5 @@ func GetChartData(repo *db.Repository) ([]db.ChartPoint, error) {
 		return []db.ChartPoint{}, nil
 	}
 
-	fmt.Println(chartPoints)
-
-	return []db.ChartPoint{}, nil
+	return chartPoints, nil
 }

@@ -97,5 +97,13 @@ func (r *Repository) migrate() error {
 		}
 	}
 
+	// Normalize dates: convert Go's "2006-01-02 00:00:00 +0000 UTC" to "2006-01-02"
+	// For deposit: UPDATE in place (user data, no PK on date)
+	r.conn.Exec(`UPDATE deposit SET deposit_date = substr(deposit_date, 1, 10) WHERE length(deposit_date) > 10;`)
+	// For index_price and eur_exchange_rate: DELETE old-format rows (they'll be re-synced).
+	// UPDATE would fail silently due to PK conflict when a normalized row already exists.
+	r.conn.Exec(`DELETE FROM index_price WHERE length(date) > 10;`)
+	r.conn.Exec(`DELETE FROM eur_exchange_rate WHERE length(date) > 10;`)
+
 	return nil
 }

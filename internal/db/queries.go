@@ -2,6 +2,7 @@ package db
 
 import (
 	"database/sql"
+	"fmt"
 	"time"
 )
 
@@ -82,7 +83,7 @@ func (r *Repository) GetAllDeposits() ([]Deposit, error) {
 func (r *Repository) AddDeposit(deposit UserDeposit) error {
 	_, err := r.conn.Exec(`
 	INSERT INTO deposit (deposit_date, deposit_amount_in_eurocents, deposit_volume, deposit_volume_precision)
-	VALUES ($1, $2, $3, $4);`, deposit.DepositDate, deposit.Value, deposit.Volume, deposit.VolumePrecision)
+	VALUES ($1, $2, $3, $4);`, deposit.DepositDate.Format("2006-01-02"), deposit.Value, deposit.Volume, deposit.VolumePrecision)
 
 	if err != nil {
 		return err
@@ -105,7 +106,7 @@ func (r *Repository) AddRates(rates []CurrencyRate) error {
 	defer stmt.Close()
 
 	for _, rate := range rates {
-		if _, err := stmt.Exec(rate.Date, rate.RateInGrosz); err != nil {
+		if _, err := stmt.Exec(rate.Date.Format("2006-01-02"), rate.RateInGrosz); err != nil {
 			return err
 		}
 	}
@@ -127,7 +128,7 @@ func (r *Repository) AddIndexPrices(indexPrices []IndexPrice) error {
 	defer stmt.Close()
 
 	for _, p := range indexPrices {
-		if _, err := stmt.Exec(p.Date, p.PriceInEurocents, p.IsReal); err != nil {
+		if _, err := stmt.Exec(p.Date.Format("2006-01-02"), p.PriceInEurocents, p.IsReal); err != nil {
 			return err
 		}
 	}
@@ -174,7 +175,7 @@ func (r *Repository) GetIndexPriceByDate(date time.Time) (IndexPrice, error) {
 			WHERE date >= ? AND is_real = 1
 			ORDER BY date ASC 
 			LIMIT 1;
-	`, date)
+	`, date.Format("2006-01-02"))
 
 	var indexPrice IndexPrice
 	if err := row.Scan(
@@ -204,48 +205,44 @@ func (r *Repository) GetLatestExchangeRate() (CurrencyRate, error) {
 }
 
 func (r *Repository) GetChartPoints() ([]ChartPoint, error) {
-	rows, err := r.conn.Query(`
-		WITH RECURSIVE dates(date) AS (
-			SELECT MIN(deposit_date) FROM deposit
-			UNION ALL
-			SELECT date(date, '+1 day') FROM dates WHERE date < date('now')
-		),
-		daily_totals AS (
-			SELECT 
-				d.date,
-				(SELECT SUM(deposit_amount_in_eurocents) FROM deposit WHERE deposit_date <= d.date) as total_invested,
-				(SELECT SUM(deposit_volume) FROM deposit WHERE deposit_date <= d.date) as total_volume,
-				(SELECT COALESCE(deposit_volume_precision, 0) FROM deposit LIMIT 1) as precision
-			FROM dates d
-		)
+	query := `
+	WITH daily_purchases AS (
 		SELECT 
-			dt.date,
-			CAST(dt.total_invested AS REAL) / 100 as invested_eur,
-			CAST((dt.total_volume * COALESCE(p.price_in_eurocents, 0)) AS REAL) / (100.0 * POWER(10, dt.precision)) as market_value_eur
-		FROM daily_totals dt
-		LEFT JOIN index_price p ON p.date = (
-			SELECT date FROM index_price 
-			WHERE date <= dt.date AND is_real = 1 
-			ORDER BY date DESC LIMIT 1
-		)
-		WHERE dt.total_invested IS NOT NULL;
-	`)
+			d.deposit_date as d_date,
+			SUM(d.deposit_amount_in_eurocents) AS daily_invested,
+			SUM(CAST(d.deposit_amount_in_eurocents AS FLOAT) / ip.price_in_eurocents) AS units_bought
+		FROM deposit d
+		JOIN index_price ip ON d.deposit_date = ip.date
+		GROUP BY d_date
+	),
+	running_totals AS (
+		SELECT 
+			ip.date as d_date,
+			SUM(COALESCE(dp.daily_invested, 0)) OVER (ORDER BY ip.date) AS total_invested,
+			SUM(COALESCE(dp.units_bought, 0)) OVER (ORDER BY ip.date) AS total_units,
+			ip.price_in_eurocents
+		FROM index_price ip
+		LEFT JOIN daily_purchases dp ON ip.date = dp.d_date
+		WHERE ip.date >= (SELECT MIN(deposit_date) FROM deposit)
+	)
+	SELECT 
+		d_date,
+		CAST(total_invested AS FLOAT) / 100.0 AS Invested,
+		(total_units * price_in_eurocents) / 100.0 AS Value
+	FROM running_totals
+	WHERE total_invested > 0
+	ORDER BY d_date;`
 
+	rows, err := r.conn.Query(query)
 	if err != nil {
-		return []ChartPoint{}, err
+		return []ChartPoint{}, fmt.Errorf("SQL Error: %w", err)
 	}
-
 	defer rows.Close()
 
 	var chartPoints []ChartPoint
-
 	for rows.Next() {
 		var d ChartPoint
-		if err := rows.Scan(
-			&d.Date,
-			&d.Invested,
-			&d.Value,
-		); err != nil {
+		if err := rows.Scan(&d.Date, &d.Invested, &d.Value); err != nil {
 			return []ChartPoint{}, err
 		}
 		chartPoints = append(chartPoints, d)

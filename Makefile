@@ -39,8 +39,8 @@ test-update:
 	@rm -f ~/.plutus_update_check
 	@PLUTUS_DEBUG_UPDATE=true go run -ldflags "-X '$(PKG).Version=v0.0.1'" ./cmd/plutus status
 
-dashboard:
-	@PLUTUS_DB=$(DEV_DB) go run ./cmd/plutus dashboard
+dashboard: build
+	@PLUTUS_DB=$(DEV_DB) ./$(BINARY_NAME)$(EXT) dashboard
 
 %:
 	@:
