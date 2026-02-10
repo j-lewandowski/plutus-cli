@@ -18,7 +18,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.22"
+          go-version-file: go.mod
 
       - name: Build binaries
         run: |
@@ -27,9 +27,8 @@ jobs:
           VERSION=${GITHUB_REF#refs/tags/}
           COMMIT=$(git rev-parse --short HEAD)
           BUILD_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-          PKG="plutus-cli/cmd/plutus"
 
-          LDFLAGS="-X '$PKG.Version=$VERSION' -X '$PKG.Commit=$COMMIT' -X '$PKG.BuildTime=$BUILD_TIME' -s -w"
+          LDFLAGS="-X main.Version=${VERSION} -X main.Commit=${COMMIT} -X main.BuildTime=${BUILD_TIME} -s -w"
 
           # Linux
           GOOS=linux GOARCH=amd64 go build -ldflags "$LDFLAGS" -o dist/plutus-cli-linux-amd64 ./cmd/plutus
