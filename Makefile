@@ -19,7 +19,7 @@ else
     EXT =
 endif
 
-.PHONY: all build run clean test-update dashboard
+.PHONY: all build run clean test-update dashboard db-reset db-seed db-shell db-dump
 
 all: build
 
@@ -41,6 +41,37 @@ test-update:
 
 dashboard: build
 	@PLUTUS_DB=$(DEV_DB) ./$(BINARY_NAME)$(EXT) dashboard
+
+
+db-reset:
+	@echo "🗑️  Resetting dev database..."
+	@$(RM) $(DEV_DB)
+	@echo "✅ Dev database deleted. It will be recreated on next run."
+
+db-seed: db-reset
+	@echo "🌱 Seeding dev database..."
+	@PLUTUS_DB=$(DEV_DB) go run ./cmd/plutus add 100 01.06.2025
+	@PLUTUS_DB=$(DEV_DB) go run ./cmd/plutus add 200 15.07.2025
+	@PLUTUS_DB=$(DEV_DB) go run ./cmd/plutus add 150 01.09.2025
+	@PLUTUS_DB=$(DEV_DB) go run ./cmd/plutus add 300 15.10.2025
+	@PLUTUS_DB=$(DEV_DB) go run ./cmd/plutus add 123 12.12.2025
+	@PLUTUS_DB=$(DEV_DB) go run ./cmd/plutus add 250 15.01.2026
+	@echo "📡 Syncing data..."
+	@PLUTUS_DB=$(DEV_DB) go run ./cmd/plutus sync
+	@echo "✅ Seed complete! Run 'make dashboard' or 'make run status' to verify."
+
+db-shell:
+	@sqlite3 $(DEV_DB)
+
+db-dump:
+	@echo "=== deposits ==="
+	@sqlite3 $(DEV_DB) "SELECT id, deposit_date, deposit_amount_in_eurocents/100.0 || ' €' as amount FROM deposit ORDER BY deposit_date;"
+	@echo ""
+	@echo "=== index_price (last 5) ==="
+	@sqlite3 $(DEV_DB) "SELECT date, price_in_eurocents/100.0 || ' €' as price, CASE is_real WHEN 1 THEN 'real' ELSE 'filled' END as type FROM index_price ORDER BY date DESC LIMIT 5;"
+	@echo ""
+	@echo "=== eur_exchange_rate (last 5) ==="
+	@sqlite3 $(DEV_DB) "SELECT date, price_pln_in_grosz/100.0 || ' PLN' as rate FROM eur_exchange_rate ORDER BY date DESC LIMIT 5;"
 
 %:
 	@:
