@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -51,7 +53,7 @@ func CheckForUpdates(currentVersion string) {
 		return
 	}
 
-	if release.TagName != currentVersion {
+	if isNewerVersion(release.TagName, currentVersion) {
 		fmt.Printf("\n\033[33m🚀 A new version of Plutus is available: %s (current: %s)\033[0m\n", release.TagName, currentVersion)
 		fmt.Println("\033[33m👉 To update, run:\033[0m")
 
@@ -60,4 +62,40 @@ func CheckForUpdates(currentVersion string) {
 	}
 
 	os.WriteFile(cachePath, []byte(release.TagName), 0644)
+}
+
+func isNewerVersion(remote, current string) bool {
+	r := parseVersion(remote)
+	c := parseVersion(current)
+
+	if r == nil || c == nil {
+		return remote != current
+	}
+
+	for i := 0; i < 3; i++ {
+		if r[i] > c[i] {
+			return true
+		}
+		if r[i] < c[i] {
+			return false
+		}
+	}
+	return false
+}
+
+func parseVersion(v string) []int {
+	v = strings.TrimPrefix(v, "v")
+	parts := strings.Split(v, ".")
+	if len(parts) != 3 {
+		return nil
+	}
+	nums := make([]int, 3)
+	for i, p := range parts {
+		n, err := strconv.Atoi(p)
+		if err != nil {
+			return nil
+		}
+		nums[i] = n
+	}
+	return nums
 }
