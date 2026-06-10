@@ -4,16 +4,54 @@ on:
   push:
     tags:
       - "v*"
+  workflow_run:
+    workflows: ["Bump Version"]
+    types:
+      - completed
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Tag to release (e.g. v3.1.0)
+        required: true
+        type: string
 
 permissions:
   contents: write
 
 jobs:
   build:
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve version
+        id: version
+        run: |
+          case "${{ github.event_name }}" in
+            workflow_dispatch)
+              VERSION="${{ inputs.tag }}"
+              ;;
+            push)
+              VERSION="${GITHUB_REF#refs/tags/}"
+              ;;
+            workflow_run)
+              git fetch --tags --force
+              VERSION=$(git describe --tags --abbrev=0)
+              ;;
+          esac
+
+          if ! git rev-parse "$VERSION" >/dev/null 2>&1; then
+            echo "Tag $VERSION not found"
+            exit 1
+          fi
+
+          git checkout "$VERSION"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Building $VERSION"
 
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -24,7 +62,7 @@ jobs:
         run: |
           mkdir dist
 
-          VERSION=${GITHUB_REF#refs/tags/}
+          VERSION=${{ steps.version.outputs.version }}
           COMMIT=$(git rev-parse --short HEAD)
           BUILD_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
@@ -49,5 +87,6 @@ jobs:
       - name: Create release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ steps.version.outputs.version }}
           files: |
             dist/*

@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-REPO="j-lewandowski/plutus-cli"
+REPO="jlwnd/plutus-cli"
 
 OS=$(uname | tr '[:upper:]' '[:lower:]')
 ARCH=$(uname -m)
@@ -21,7 +21,7 @@ BIN="plutus-cli-$OS-$ARCH"
 URL="https://github.com/$REPO/releases/latest/download/$BIN"
 
 echo "Downloading $BIN..."
-curl -L "$URL" -o plutus
+curl -fsSL "$URL" -o plutus
 
 chmod +x plutus
 sudo mv plutus /usr/local/bin/plutus
