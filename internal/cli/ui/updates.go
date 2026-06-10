@@ -35,7 +35,7 @@ func CheckForUpdates(currentVersion string) {
 		Timeout: 1200 * time.Millisecond,
 	}
 
-	req, _ := http.NewRequest("GET", "https://api.github.com/repos/j-lewandowski/plutus-cli/releases/latest", nil)
+	req, _ := http.NewRequest("GET", "https://api.github.com/repos/jlwnd/plutus-cli/releases/latest", nil)
 	req.Header.Set("User-Agent", "plutus-cli-updater")
 
 	resp, err := client.Do(req)
@@ -57,7 +57,7 @@ func CheckForUpdates(currentVersion string) {
 		fmt.Printf("\n\033[33m🚀 A new version of Plutus is available: %s (current: %s)\033[0m\n", release.TagName, currentVersion)
 		fmt.Println("\033[33m👉 To update, run:\033[0m")
 
-		installCmd := "curl -fsSL https://raw.githubusercontent.com/j-lewandowski/plutus-cli/main/install.sh | bash"
+		installCmd := "curl -fsSL https://raw.githubusercontent.com/jlwnd/plutus-cli/main/install.sh | bash"
 		fmt.Printf("\033[36m%s\033[0m\n\n", installCmd)
 	}
 

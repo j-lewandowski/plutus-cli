@@ -50,7 +50,7 @@ Plutus is distributed as a single executable and does not require an interpreter
 To install `plutus`, simply run the following command:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/j-lewandowski/plutus-cli/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/jlwnd/plutus-cli/main/install.sh | bash
 ```
 
 ## Commands
