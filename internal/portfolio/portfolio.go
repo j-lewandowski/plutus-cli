@@ -31,6 +31,11 @@ func CalculatePortfolio(repo *db.Repository) (*PortfolioReport, error) {
 		return nil, err
 	}
 
+	overallSellInEurocents, err := repo.GetOverallSellInEurocents()
+	if err != nil {
+		return nil, err
+	}
+
 	latestIndexPrice, err := repo.GetLatestIndexPrice()
 	if err != nil {
 		return nil, err
@@ -39,6 +44,11 @@ func CalculatePortfolio(repo *db.Repository) (*PortfolioReport, error) {
 	latestExchangeRate, errExchangeRate := repo.GetLatestExchangeRate()
 
 	allDeposits, err := repo.GetAllDeposits()
+	if err != nil {
+		return nil, err
+	}
+
+	allSells, err := repo.GetAllSells()
 	if err != nil {
 		return nil, err
 	}
@@ -57,8 +67,6 @@ func CalculatePortfolio(repo *db.Repository) (*PortfolioReport, error) {
 	var totalUnitsOwnedScaled int64
 
 	for _, deposit := range allDeposits {
-		var unitsScaled int64
-
 		historicalPrice, err := repo.GetIndexPriceByDate(deposit.DepositDate)
 		if err != nil {
 			report.Warnings = append(report.Warnings, fmt.Sprintf("Warning: Could not find index price for date %s. Skipping calculation for this deposit.", deposit.DepositDate))
@@ -69,11 +77,30 @@ func CalculatePortfolio(repo *db.Repository) (*PortfolioReport, error) {
 			continue
 		}
 
-		unitsScaled = (int64(deposit.DepositAmountInEurocents) * CalculationPrecision) / int64(historicalPrice.PriceInEurocents)
+		unitsScaled := (int64(deposit.DepositAmountInEurocents) * CalculationPrecision) / int64(historicalPrice.PriceInEurocents)
 		totalUnitsOwnedScaled += unitsScaled
 	}
 
-	report.TotalInvestedInEurocents = int64(overallAmountInEurocents)
+	for _, sell := range allSells {
+		historicalPrice, err := repo.GetIndexPriceByDate(sell.SellDate)
+		if err != nil {
+			report.Warnings = append(report.Warnings, fmt.Sprintf("Warning: Could not find index price for date %s. Skipping calculation for this sell.", sell.SellDate))
+			continue
+		}
+
+		if historicalPrice.PriceInEurocents == 0 {
+			continue
+		}
+
+		unitsScaled := (int64(sell.SellAmountInEurocents) * CalculationPrecision) / int64(historicalPrice.PriceInEurocents)
+		totalUnitsOwnedScaled -= unitsScaled
+	}
+
+	if totalUnitsOwnedScaled < 0 {
+		report.Warnings = append(report.Warnings, "Warning: Portfolio units are negative. Total sells exceed total buys.")
+	}
+
+	report.TotalInvestedInEurocents = int64(overallAmountInEurocents - overallSellInEurocents)
 
 	report.CurrentValueInEurocents = (totalUnitsOwnedScaled * int64(latestIndexPrice.PriceInEurocents)) / CalculationPrecision
 
