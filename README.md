@@ -105,3 +105,14 @@ Shows information about available commands.
 ```bash
 plutus help
 ```
+
+---
+
+## Releasing
+
+Version numbers come from git tags. To publish a new release:
+
+1. Open **Actions → Bump Version → Run workflow** on GitHub.
+2. Select `patch`, `minor`, or `major`.
+3. Wait for the **Bump Version** workflow to finish, then for the **Release** workflow to build and publish binaries.
+4. Verify the new version with `plutus version` after installing from the latest release.
