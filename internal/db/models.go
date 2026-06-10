@@ -27,63 +27,106 @@ type Deposit struct {
 	DepositVolumePrecision   int       `db:"deposit_volume_precision"`
 }
 
-func (d *UserDeposit) From(depositParams NewDepositParams) error {
-	if err := d.initValue(depositParams.DepositAmount); err != nil {
-		return err
-	}
-
-	if err := d.initVolume(depositParams.DepositVolume); err != nil {
-		return err
-	}
-
-	if err := d.initDate(depositParams.DepositDate); err != nil {
-		return err
-	}
-
-	return nil
+type NewSellParams struct {
+	SellAmount string
+	SellVolume string
+	SellDate   string
 }
 
-func (d *UserDeposit) initVolume(depositVolumeInput string) error {
-	if depositVolumeInput == "" {
-		d.Volume = 0
-		d.VolumePrecision = 0
-		return nil
-	}
+type UserSell struct {
+	Value           int
+	Volume          int64
+	VolumePrecision int
+	SellDate        time.Time
+}
 
-	depositVolumeInput = strings.Replace(depositVolumeInput, ",", ".", 1)
-	splittedUserInput := strings.Split(depositVolumeInput, ".")
+type Sell struct {
+	Id                    int       `db:"id"`
+	SellDate              time.Time `db:"sell_date"`
+	SellAmountInEurocents int       `db:"sell_amount_in_eurocents"`
+	SellVolume            int64     `db:"sell_volume"`
+	SellVolumePrecision   int       `db:"sell_volume_precision"`
+}
 
-	if len(splittedUserInput) < 2 {
-		val, err := strconv.ParseInt(depositVolumeInput, 10, 64)
-		if err != nil {
-			return err
-		}
-		d.Volume = val
-		d.VolumePrecision = 0
-		return nil
-	}
-
-	integerPart, fractionalPart := splittedUserInput[0], splittedUserInput[1]
-	fractionalPartLength := len(fractionalPart)
-
-	// Combine integer and fractional parts
-	combined := integerPart + fractionalPart
-	val, err := strconv.ParseInt(combined, 10, 64)
+func (s *UserSell) From(sellParams NewSellParams) error {
+	value, err := parseEurocents(sellParams.SellAmount)
 	if err != nil {
 		return err
 	}
+	s.Value = value
 
-	d.Volume = val
-	d.VolumePrecision = fractionalPartLength
+	volume, precision, err := parseOptionalVolume(sellParams.SellVolume)
+	if err != nil {
+		return err
+	}
+	s.Volume = volume
+	s.VolumePrecision = precision
+
+	sellDate, err := parseUserDate(sellParams.SellDate)
+	if err != nil {
+		return err
+	}
+	s.SellDate = sellDate
+
 	return nil
 }
-func (d *UserDeposit) initValue(depositAmountInput string) error {
-	depositAmountInput = strings.Replace(depositAmountInput, ",", ".", 1)
 
-	parts := strings.Split(depositAmountInput, ".")
+func (d *UserDeposit) From(depositParams NewDepositParams) error {
+	value, err := parseEurocents(depositParams.DepositAmount)
+	if err != nil {
+		return err
+	}
+	d.Value = value
+
+	volume, precision, err := parseOptionalVolume(depositParams.DepositVolume)
+	if err != nil {
+		return err
+	}
+	d.Volume = volume
+	d.VolumePrecision = precision
+
+	depositDate, err := parseUserDate(depositParams.DepositDate)
+	if err != nil {
+		return err
+	}
+	d.DepositDate = depositDate
+
+	return nil
+}
+
+func parseOptionalVolume(volumeInput string) (int64, int, error) {
+	if volumeInput == "" {
+		return 0, 0, nil
+	}
+
+	volumeInput = strings.Replace(volumeInput, ",", ".", 1)
+	splittedUserInput := strings.Split(volumeInput, ".")
+
+	if len(splittedUserInput) < 2 {
+		val, err := strconv.ParseInt(volumeInput, 10, 64)
+		if err != nil {
+			return 0, 0, err
+		}
+		return val, 0, nil
+	}
+
+	integerPart, fractionalPart := splittedUserInput[0], splittedUserInput[1]
+	combined := integerPart + fractionalPart
+	val, err := strconv.ParseInt(combined, 10, 64)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	return val, len(fractionalPart), nil
+}
+
+func parseEurocents(amountInput string) (int, error) {
+	amountInput = strings.Replace(amountInput, ",", ".", 1)
+
+	parts := strings.Split(amountInput, ".")
 
 	if len(parts) > 1 && len(parts[1]) > 2 {
-		return fmt.Errorf("Deposit amount cannot have more than 2 decimal places")
+		return 0, fmt.Errorf("Deposit amount cannot have more than 2 decimal places")
 	}
 
 	integerPart := parts[0]
@@ -103,28 +146,26 @@ func (d *UserDeposit) initValue(depositAmountInput string) error {
 	val, err := strconv.Atoi(combined)
 
 	if err != nil {
-		return err
+		return 0, err
 	}
 
-	d.Value = val
-	return nil
+	return val, nil
 }
-func (d *UserDeposit) initDate(depositDateInput string) error {
-	if depositDateInput == "" {
-		d.DepositDate = time.Now().UTC()
-		return nil
+
+func parseUserDate(dateInput string) (time.Time, error) {
+	if dateInput == "" {
+		return time.Now().UTC(), nil
 	}
 
-	normalized := strings.ReplaceAll(depositDateInput, ".", "-")
+	normalized := strings.ReplaceAll(dateInput, ".", "-")
 
 	const layout = "02-01-2006"
 	parsedTime, err := time.Parse(layout, normalized)
 	if err != nil {
-		return fmt.Errorf("Invalid date format: '%s'. Use DD.MM.YYYY or DD-MM-YYYY", depositDateInput)
+		return time.Time{}, fmt.Errorf("Invalid date format: '%s'. Use DD.MM.YYYY or DD-MM-YYYY", dateInput)
 	}
 
-	d.DepositDate = parsedTime.UTC()
-	return nil
+	return parsedTime.UTC(), nil
 }
 
 type CurrencyRate struct {

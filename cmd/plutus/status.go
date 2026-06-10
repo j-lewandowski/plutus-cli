@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"plutus-cli/internal/db" // 1. Add this import
+	"plutus-cli/internal/db"
 	"plutus-cli/internal/portfolio"
 	"plutus-cli/internal/sync"
 

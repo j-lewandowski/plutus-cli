@@ -71,6 +71,17 @@ plutus add <amount> [date]
 > [!IMPORTANT]
 > Prior to version **2.0.0**, the ISO 8601 format `YYYY-MM-DD` was accepted. Starting from version **2.0.0**, this format is no longer supported. If you used `YYYY-MM-DD` in scripts or workflows, update them to use one of the supported formats above.
 
+### `sell`
+
+Records a sell or withdrawal from your portfolio.
+
+```bash
+plutus sell <amount> [date]
+```
+
+- **amount**: The EUR amount received from the sale (e.g., `100`, `125.50`).
+- **date** (optional): The date of the sale. Supported formats: `DD.MM.YYYY`, `DD-MM-YYYY`.
+
 ### `sync`
 
 Fetches up-to-date market data from external sources (NBP, Yahoo Finance) to update the CLI's local database.
