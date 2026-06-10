@@ -32,6 +32,12 @@ $BINARY add 50.50 01-12-2025 >> $OUTPUT_FILE 2>&1
 echo -e "\n--- 5. STATUS ---" >> $OUTPUT_FILE
 $BINARY status >> $OUTPUT_FILE 2>&1
 
+echo -e "\n--- 6. SELL (50 EUR) ---" >> $OUTPUT_FILE
+$BINARY sell 50 01-12-2025 >> $OUTPUT_FILE 2>&1
+
+echo -e "\n--- 7. STATUS AFTER SELL ---" >> $OUTPUT_FILE
+$BINARY status >> $OUTPUT_FILE 2>&1
+
 rm -f $BINARY
 
 echo "Done $OUTPUT_FILE."
