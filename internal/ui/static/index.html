@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>PLUTUS CLI DASHBOARD</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
     <style>
       :root {
         --bg-color: #1e2428;
@@ -102,6 +103,37 @@
         box-sizing: border-box;
       }
 
+      .chart-controls {
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+        margin-bottom: 10px;
+      }
+
+      .chart-btn {
+        background: transparent;
+        border: 1px dashed var(--border);
+        color: var(--text-dim);
+        font-family: inherit;
+        font-size: 0.8rem;
+        padding: 4px 12px;
+        cursor: pointer;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+
+      .chart-btn:hover {
+        color: var(--text-main);
+        border-color: var(--text-dim);
+      }
+
+      .chart-hint {
+        text-align: center;
+        font-size: 0.75rem;
+        color: var(--text-dim);
+        margin-bottom: 8px;
+      }
+
       .console-logs {
         margin-top: 30px;
         font-size: 0.85rem;
@@ -153,6 +185,14 @@
         </div>
       </div>
 
+      <div class="chart-hint">
+        Scroll to zoom · Drag to pan · Double-click to reset
+      </div>
+      <div class="chart-controls">
+        <button class="chart-btn" id="zoomIn" type="button">Zoom in</button>
+        <button class="chart-btn" id="zoomOut" type="button">Zoom out</button>
+        <button class="chart-btn" id="zoomReset" type="button">Reset</button>
+      </div>
       <div class="chart-box">
         <canvas id="mainChart"></canvas>
       </div>
@@ -203,7 +243,7 @@
           const lineColor = "#e1e1e1";
           const investedColor = "#555";
 
-          new Chart(ctx, {
+          const chart = new Chart(ctx, {
             type: "line",
             data: {
               labels: data.map((d) => getField(d, "Date").substring(0, 10)),
@@ -262,6 +302,25 @@
                   bodyFont: { family: "Courier New" },
                   displayColors: false,
                 },
+                zoom: {
+                  pan: {
+                    enabled: true,
+                    mode: "x",
+                  },
+                  zoom: {
+                    wheel: {
+                      enabled: true,
+                      speed: 0.1,
+                    },
+                    pinch: {
+                      enabled: true,
+                    },
+                    mode: "x",
+                  },
+                  limits: {
+                    x: { min: "original", max: "original" },
+                  },
+                },
               },
               scales: {
                 x: {
@@ -294,6 +353,16 @@
                 },
               },
             },
+          });
+
+          document.getElementById("zoomIn").addEventListener("click", () => {
+            chart.zoom(1.2);
+          });
+          document.getElementById("zoomOut").addEventListener("click", () => {
+            chart.zoom(0.8);
+          });
+          document.getElementById("zoomReset").addEventListener("click", () => {
+            chart.resetZoom();
           });
         });
     </script>
